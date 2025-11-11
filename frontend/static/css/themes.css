@@ -1,0 +1,289 @@
+/* Theme Customization for Python ERD Tool */
+
+/* CSS Variables for theming */
+:root {
+    --primary-color: #4A90E2;
+    --success-color: #27AE60;
+    --warning-color: #F39C12;
+    --danger-color: #E74C3C;
+    --info-color: #3498DB;
+    --dark-color: #2C3E50;
+    --light-color: #ECF0F1;
+    --border-color: #BDC3C7;
+    --shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+    /* Background colors */
+    --bg-main: #f5f5f5;
+    --bg-canvas: #fafafa;
+    --bg-sidebar: white;
+    --bg-card: #f8f9fa;
+
+    /* Text colors */
+    --text-primary: #333;
+    --text-secondary: #666;
+    --text-muted: #999;
+
+    /* Table colors */
+    --table-header: #4A90E2;
+    --table-header-text: white;
+    --table-body: white;
+    --table-border: #BDC3C7;
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+    --primary-color: #5FA3EE;
+    --success-color: #2ECC71;
+    --warning-color: #F1C40F;
+    --danger-color: #E74C3C;
+    --info-color: #3498DB;
+    --dark-color: #ECF0F1;
+    --light-color: #34495E;
+    --border-color: #4A5568;
+    --shadow: 0 2px 8px rgba(0,0,0,0.3);
+
+    --bg-main: #1a202c;
+    --bg-canvas: #2d3748;
+    --bg-sidebar: #2d3748;
+    --bg-card: #4a5568;
+
+    --text-primary: #f7fafc;
+    --text-secondary: #cbd5e0;
+    --text-muted: #a0aec0;
+
+    --table-header: #2C5282;
+    --table-header-text: #f7fafc;
+    --table-body: #2d3748;
+    --table-border: #4a5568;
+}
+
+/* Ocean Theme */
+[data-theme="ocean"] {
+    --primary-color: #006994;
+    --success-color: #38B2AC;
+    --warning-color: #DD6B20;
+    --danger-color: #E53E3E;
+    --info-color: #3182CE;
+    --dark-color: #1A365D;
+    --light-color: #BEE3F8;
+    --border-color: #90CDF4;
+
+    --bg-main: #E6FFFA;
+    --bg-canvas: #C6F6D5;
+    --bg-sidebar: #B2F5EA;
+    --bg-card: #81E6D9;
+
+    --text-primary: #1A365D;
+    --text-secondary: #2C5282;
+    --text-muted: #4299E1;
+
+    --table-header: #0987A0;
+    --table-header-text: white;
+    --table-body: #E6FFFA;
+    --table-border: #90CDF4;
+}
+
+/* Forest Theme */
+[data-theme="forest"] {
+    --primary-color: #38A169;
+    --success-color: #48BB78;
+    --warning-color: #ECC94B;
+    --danger-color: #F56565;
+    --info-color: #4299E1;
+    --dark-color: #22543D;
+    --light-color: #C6F6D5;
+    --border-color: #9AE6B4;
+
+    --bg-main: #F0FFF4;
+    --bg-canvas: #E6FFFA;
+    --bg-sidebar: #C6F6D5;
+    --bg-card: #9AE6B4;
+
+    --text-primary: #22543D;
+    --text-secondary: #276749;
+    --text-muted: #48BB78;
+
+    --table-header: #2F855A;
+    --table-header-text: white;
+    --table-body: #F0FFF4;
+    --table-border: #9AE6B4;
+}
+
+/* Sunset Theme */
+[data-theme="sunset"] {
+    --primary-color: #DD6B20;
+    --success-color: #38B2AC;
+    --warning-color: #ECC94B;
+    --danger-color: #E53E3E;
+    --info-color: #805AD5;
+    --dark-color: #742A2A;
+    --light-color: #FED7D7;
+    --border-color: #FEB2B2;
+
+    --bg-main: #FFFAF0;
+    --bg-canvas: #FEEBC8;
+    --bg-sidebar: #FBD38D;
+    --bg-card: #F6AD55;
+
+    --text-primary: #742A2A;
+    --text-secondary: #9C4221;
+    --text-muted: #C05621;
+
+    --table-header: #C05621;
+    --table-header-text: white;
+    --table-body: #FFFAF0;
+    --table-border: #FEB2B2;
+}
+
+/* Purple Theme */
+[data-theme="purple"] {
+    --primary-color: #805AD5;
+    --success-color: #38B2AC;
+    --warning-color: #ECC94B;
+    --danger-color: #E53E3E;
+    --info-color: #4299E1;
+    --dark-color: #44337A;
+    --light-color: #E9D8FD;
+    --border-color: #D6BCFA;
+
+    --bg-main: #FAF5FF;
+    --bg-canvas: #F3E8FF;
+    --bg-sidebar: #E9D8FD;
+    --bg-card: #D6BCFA;
+
+    --text-primary: #44337A;
+    --text-secondary: #553C9A;
+    --text-muted: #6B46C1;
+
+    --table-header: #6B46C1;
+    --table-header-text: white;
+    --table-body: #FAF5FF;
+    --table-border: #D6BCFA;
+}
+
+/* Apply theme variables */
+body {
+    background: var(--bg-main);
+    color: var(--text-primary);
+}
+
+.header {
+    background: var(--bg-sidebar);
+    border-bottom-color: var(--border-color);
+}
+
+.sidebar {
+    background: var(--bg-sidebar);
+    border-right-color: var(--border-color);
+}
+
+.sidebar-section {
+    border-bottom-color: var(--border-color);
+}
+
+.canvas-container {
+    background: var(--bg-canvas);
+}
+
+.table-header {
+    fill: var(--table-header);
+}
+
+.table-header-text {
+    fill: var(--table-header-text);
+}
+
+.table-body {
+    fill: var(--table-body);
+    stroke: var(--table-border);
+}
+
+.column-text {
+    fill: var(--text-primary);
+}
+
+.form-control {
+    background: var(--bg-sidebar);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.table-list-item {
+    background: var(--bg-card);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.modal-content {
+    background: var(--bg-sidebar);
+    color: var(--text-primary);
+}
+
+.info-card {
+    background: var(--bg-card);
+}
+
+/* Theme selector styles */
+.theme-selector {
+    position: relative;
+}
+
+.theme-button {
+    padding: 0.5rem 1rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.theme-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: var(--shadow);
+    z-index: 1000;
+    min-width: 200px;
+    display: none;
+}
+
+.theme-dropdown.show {
+    display: block;
+}
+
+.theme-option {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.theme-option:hover {
+    background: var(--bg-card);
+}
+
+.theme-preview {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+}
+
+.theme-preview.light { background: #4A90E2; }
+.theme-preview.dark { background: #2d3748; }
+.theme-preview.ocean { background: #006994; }
+.theme-preview.forest { background: #38A169; }
+.theme-preview.sunset { background: #DD6B20; }
+.theme-preview.purple { background: #805AD5; }
+
+/* Smooth theme transitions */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, fill 0.3s ease;
+}

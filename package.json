@@ -1,0 +1,40 @@
+{
+  "name": "diagramflow",
+  "version": "0.3.0",
+  "description": "Modern collaborative ERD tool with real-time editing, version control, and intelligent design analysis",
+  "main": "backend/app.py",
+  "scripts": {
+    "start": "python backend/app.py",
+    "dev": "python backend/app.py",
+    "test": "pytest tests/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/diagramflow"
+  },
+  "keywords": [
+    "erd",
+    "database",
+    "diagram",
+    "collaboration",
+    "real-time",
+    "schema-design",
+    "mysql",
+    "postgresql",
+    "oracle",
+    "ddl-generator",
+    "normalization"
+  ],
+  "author": "DiagramFlow Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/your-org/diagramflow/issues"
+  },
+  "homepage": "https://github.com/your-org/diagramflow#readme",
+  "dependencies": {
+    "socket.io-client": "^4.5.4"
+  },
+  "engines": {
+    "python": ">=3.11"
+  }
+}

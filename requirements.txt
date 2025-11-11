@@ -1,0 +1,24 @@
+# Python ERD Tool - Requirements
+
+# Web Framework
+Flask==3.0.0
+Flask-CORS==4.0.0
+Flask-SocketIO==5.3.5
+python-socketio==5.10.0
+
+# Data handling
+pydantic==2.5.0
+
+# Database connectors (for reverse engineering)
+pymysql==1.1.0
+psycopg2-binary==2.9.9
+
+# Excel export
+openpyxl==3.1.2
+
+# Git integration
+GitPython==3.1.40
+
+# Development
+pytest==7.4.3
+black==23.12.0
