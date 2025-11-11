@@ -5,6 +5,7 @@ class ERDEditor {
         this.diagram = null;
         this.currentDiagramId = null;
         this.selectedTable = null;
+        this.selectedRelationship = null;
         this.draggedTable = null;
         this.dragOffset = { x: 0, y: 0 };
 
@@ -131,6 +132,198 @@ class ERDEditor {
             console.error('Export DDL error:', error);
             alert('DDL 내보내기 중 오류가 발생했습니다.');
         }
+    }
+
+    // ==================== Relationship Management ====================
+
+    addRelationship() {
+        if (this.diagram.tables.length < 2) {
+            alert('관계를 추가하려면 최소 2개의 테이블이 필요합니다.');
+            return;
+        }
+
+        this.selectedRelationship = null;
+        this.clearRelationshipModal();
+        this.populateRelationshipTableSelects();
+
+        document.getElementById('relationship-modal-title').textContent = '관계 추가';
+        this.showModal('relationship-modal');
+    }
+
+    editRelationship(relId) {
+        const rel = this.diagram.relationships.find(r => r.id === relId);
+        if (!rel) return;
+
+        this.selectedRelationship = rel;
+        this.populateRelationshipTableSelects();
+
+        document.getElementById('rel-name').value = rel.name || '';
+        document.getElementById('rel-source-table').value = rel.source_table_id;
+        document.getElementById('rel-target-table').value = rel.target_table_id;
+        document.getElementById('rel-cardinality').value = rel.cardinality;
+        document.getElementById('rel-on-delete').value = rel.on_delete || 'RESTRICT';
+        document.getElementById('rel-on-update').value = rel.on_update || 'CASCADE';
+        document.getElementById('rel-comment').value = rel.comment || '';
+
+        // Populate columns for selected tables
+        this.populateRelationshipColumnSelects('source', rel.source_table_id);
+        this.populateRelationshipColumnSelects('target', rel.target_table_id);
+
+        // Select the columns
+        setTimeout(() => {
+            const sourceSelect = document.getElementById('rel-source-columns');
+            const targetSelect = document.getElementById('rel-target-columns');
+
+            Array.from(sourceSelect.options).forEach(opt => {
+                opt.selected = rel.source_column_ids.includes(opt.value);
+            });
+
+            Array.from(targetSelect.options).forEach(opt => {
+                opt.selected = rel.target_column_ids.includes(opt.value);
+            });
+        }, 50);
+
+        document.getElementById('relationship-modal-title').textContent = '관계 편집';
+        this.showModal('relationship-modal');
+    }
+
+    saveRelationshipFromModal() {
+        const sourceTableId = document.getElementById('rel-source-table').value;
+        const targetTableId = document.getElementById('rel-target-table').value;
+        const sourceColumnIds = Array.from(document.getElementById('rel-source-columns').selectedOptions).map(opt => opt.value);
+        const targetColumnIds = Array.from(document.getElementById('rel-target-columns').selectedOptions).map(opt => opt.value);
+
+        if (!sourceTableId || !targetTableId) {
+            alert('소스 테이블과 대상 테이블을 모두 선택해주세요.');
+            return;
+        }
+
+        if (sourceColumnIds.length === 0 || targetColumnIds.length === 0) {
+            alert('소스 컬럼과 대상 컬럼을 모두 선택해주세요.');
+            return;
+        }
+
+        if (sourceColumnIds.length !== targetColumnIds.length) {
+            alert('소스 컬럼과 대상 컬럼의 개수가 같아야 합니다.');
+            return;
+        }
+
+        const relationship = {
+            id: this.selectedRelationship?.id || this.generateId(),
+            name: document.getElementById('rel-name').value || null,
+            source_table_id: sourceTableId,
+            target_table_id: targetTableId,
+            source_column_ids: sourceColumnIds,
+            target_column_ids: targetColumnIds,
+            cardinality: document.getElementById('rel-cardinality').value,
+            on_delete: document.getElementById('rel-on-delete').value,
+            on_update: document.getElementById('rel-on-update').value,
+            comment: document.getElementById('rel-comment').value || ''
+        };
+
+        if (this.selectedRelationship) {
+            // Update existing relationship
+            const index = this.diagram.relationships.findIndex(r => r.id === this.selectedRelationship.id);
+            if (index !== -1) {
+                this.diagram.relationships[index] = relationship;
+            }
+        } else {
+            // Add new relationship
+            this.diagram.relationships.push(relationship);
+        }
+
+        // Update foreign_key in target columns
+        this.updateForeignKeyReferences(relationship);
+
+        this.hideModal('relationship-modal');
+        this.render();
+    }
+
+    deleteRelationship(relId) {
+        if (confirm('이 관계를 삭제하시겠습니까?')) {
+            const rel = this.diagram.relationships.find(r => r.id === relId);
+            if (rel) {
+                // Clear foreign_key references in target columns
+                const targetTable = this.diagram.tables.find(t => t.id === rel.target_table_id);
+                if (targetTable) {
+                    rel.target_column_ids.forEach(colId => {
+                        const column = targetTable.columns.find(c => c.id === colId);
+                        if (column) {
+                            column.foreign_key = null;
+                        }
+                    });
+                }
+            }
+
+            this.diagram.relationships = this.diagram.relationships.filter(r => r.id !== relId);
+            this.render();
+        }
+    }
+
+    updateForeignKeyReferences(relationship) {
+        const targetTable = this.diagram.tables.find(t => t.id === relationship.target_table_id);
+        if (!targetTable) return;
+
+        relationship.target_column_ids.forEach((colId, index) => {
+            const column = targetTable.columns.find(c => c.id === colId);
+            if (column) {
+                column.foreign_key = {
+                    table_id: relationship.source_table_id,
+                    column_id: relationship.source_column_ids[index]
+                };
+            }
+        });
+    }
+
+    clearRelationshipModal() {
+        document.getElementById('rel-name').value = '';
+        document.getElementById('rel-source-table').value = '';
+        document.getElementById('rel-target-table').value = '';
+        document.getElementById('rel-source-columns').innerHTML = '';
+        document.getElementById('rel-target-columns').innerHTML = '';
+        document.getElementById('rel-cardinality').value = '1:N';
+        document.getElementById('rel-on-delete').value = 'RESTRICT';
+        document.getElementById('rel-on-update').value = 'CASCADE';
+        document.getElementById('rel-comment').value = '';
+    }
+
+    populateRelationshipTableSelects() {
+        const sourceSelect = document.getElementById('rel-source-table');
+        const targetSelect = document.getElementById('rel-target-table');
+
+        const currentSourceValue = sourceSelect.value;
+        const currentTargetValue = targetSelect.value;
+
+        sourceSelect.innerHTML = '<option value="">-- 테이블 선택 --</option>';
+        targetSelect.innerHTML = '<option value="">-- 테이블 선택 --</option>';
+
+        this.diagram.tables.forEach(table => {
+            const displayName = table.logical_name || table.physical_name;
+            sourceSelect.innerHTML += `<option value="${table.id}">${displayName}</option>`;
+            targetSelect.innerHTML += `<option value="${table.id}">${displayName}</option>`;
+        });
+
+        if (currentSourceValue) sourceSelect.value = currentSourceValue;
+        if (currentTargetValue) targetSelect.value = currentTargetValue;
+    }
+
+    populateRelationshipColumnSelects(type, tableId) {
+        const selectId = type === 'source' ? 'rel-source-columns' : 'rel-target-columns';
+        const select = document.getElementById(selectId);
+
+        select.innerHTML = '';
+
+        if (!tableId) return;
+
+        const table = this.diagram.tables.find(t => t.id === tableId);
+        if (!table) return;
+
+        table.columns.forEach(column => {
+            const displayName = column.logical_name || column.physical_name;
+            const dataType = column.data_type.toUpperCase();
+            const pkMark = column.primary_key ? '🔑 ' : '';
+            select.innerHTML += `<option value="${column.id}">${pkMark}${displayName} (${dataType})</option>`;
+        });
     }
 
     // ==================== Table Management ====================
@@ -331,14 +524,87 @@ class ERDEditor {
 
         if (!sourceTable || !targetTable) return;
 
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.classList.add('relationship-group');
+        g.dataset.relationshipId = rel.id;
+
+        const x1 = sourceTable.position.x + 125;
+        const y1 = sourceTable.position.y + 15;
+        const x2 = targetTable.position.x + 125;
+        const y2 = targetTable.position.y + 15;
+
+        // Main relationship line
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.classList.add('relationship-line');
-        line.setAttribute('x1', sourceTable.position.x + 125);
-        line.setAttribute('y1', sourceTable.position.y + 15);
-        line.setAttribute('x2', targetTable.position.x + 125);
-        line.setAttribute('y2', targetTable.position.y + 15);
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2);
+        line.setAttribute('y2', y2);
+        line.setAttribute('marker-end', 'url(#arrowhead)');
+        line.style.cursor = 'pointer';
 
-        container.appendChild(line);
+        // Cardinality labels
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+
+        // Source cardinality (1 for source side)
+        const sourceCard = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        sourceCard.classList.add('cardinality-text');
+        sourceCard.setAttribute('x', x1 + (x2 - x1) * 0.15);
+        sourceCard.setAttribute('y', y1 + (y2 - y1) * 0.15 - 5);
+        sourceCard.textContent = '1';
+
+        // Target cardinality (depends on relationship type)
+        const targetCard = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        targetCard.classList.add('cardinality-text');
+        targetCard.setAttribute('x', x1 + (x2 - x1) * 0.85);
+        targetCard.setAttribute('y', y1 + (y2 - y1) * 0.85 - 5);
+
+        if (rel.cardinality === '1:1') {
+            targetCard.textContent = '1';
+        } else if (rel.cardinality === '1:N') {
+            targetCard.textContent = 'N';
+        } else if (rel.cardinality === 'N:N') {
+            targetCard.textContent = 'N';
+            sourceCard.textContent = 'N';
+        }
+
+        // Add click handler for editing
+        g.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            this.showRelationshipContextMenu(e, rel);
+        });
+
+        g.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.editRelationship(rel.id);
+        });
+
+        g.appendChild(line);
+        g.appendChild(sourceCard);
+        g.appendChild(targetCard);
+        container.appendChild(g);
+    }
+
+    showRelationshipContextMenu(e, relationship) {
+        const menu = document.getElementById('context-menu');
+        menu.style.left = e.clientX + 'px';
+        menu.style.top = e.clientY + 'px';
+        menu.style.display = 'block';
+
+        document.getElementById('menu-edit').onclick = () => {
+            this.editRelationship(relationship.id);
+            menu.style.display = 'none';
+        };
+
+        document.getElementById('menu-delete').onclick = () => {
+            this.deleteRelationship(relationship.id);
+            menu.style.display = 'none';
+        };
+
+        document.addEventListener('click', () => {
+            menu.style.display = 'none';
+        }, { once: true });
     }
 
     renderTableList() {
@@ -381,6 +647,7 @@ class ERDEditor {
         document.getElementById('btn-load').addEventListener('click', () => this.loadDiagram());
         document.getElementById('btn-export-ddl').addEventListener('click', () => this.exportDDL());
         document.getElementById('btn-add-table').addEventListener('click', () => this.addTable());
+        document.getElementById('btn-add-relationship').addEventListener('click', () => this.addRelationship());
 
         document.getElementById('btn-add-column').addEventListener('click', () => {
             const container = document.getElementById('columns-container');
@@ -388,6 +655,16 @@ class ERDEditor {
         });
 
         document.getElementById('btn-save-table').addEventListener('click', () => this.saveTableFromModal());
+        document.getElementById('btn-save-relationship').addEventListener('click', () => this.saveRelationshipFromModal());
+
+        // Relationship modal table selection handlers
+        document.getElementById('rel-source-table').addEventListener('change', (e) => {
+            this.populateRelationshipColumnSelects('source', e.target.value);
+        });
+
+        document.getElementById('rel-target-table').addEventListener('change', (e) => {
+            this.populateRelationshipColumnSelects('target', e.target.value);
+        });
 
         document.querySelectorAll('.modal-close').forEach(btn => {
             btn.addEventListener('click', (e) => {

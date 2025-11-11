@@ -50,6 +50,11 @@
                 </div>
 
                 <div class="sidebar-section">
+                    <h3>관계 추가</h3>
+                    <button id="btn-add-relationship" class="btn btn-block btn-success">+ 관계 추가</button>
+                </div>
+
+                <div class="sidebar-section">
                     <h3>테이블 목록</h3>
                     <div id="table-list" class="table-list">
                         <!-- Tables will be listed here -->
@@ -143,6 +148,88 @@
             <div class="modal-footer">
                 <button id="btn-copy-ddl" class="btn btn-primary">클립보드에 복사</button>
                 <button class="btn btn-secondary modal-close">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for relationship creation -->
+    <div id="relationship-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="relationship-modal-title">관계 추가</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="rel-name">관계 이름 (선택사항):</label>
+                    <input type="text" id="rel-name" class="form-control" placeholder="fk_users_orders">
+                </div>
+
+                <div class="form-group">
+                    <label for="rel-source-table">소스 테이블 (부모, PK):</label>
+                    <select id="rel-source-table" class="form-control">
+                        <option value="">-- 테이블 선택 --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="rel-source-columns">소스 컬럼 (PK):</label>
+                    <select id="rel-source-columns" class="form-control" multiple size="3">
+                    </select>
+                    <small>Ctrl/Cmd 키를 누른 채로 여러 컬럼 선택 가능</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="rel-target-table">대상 테이블 (자식, FK):</label>
+                    <select id="rel-target-table" class="form-control">
+                        <option value="">-- 테이블 선택 --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="rel-target-columns">대상 컬럼 (FK):</label>
+                    <select id="rel-target-columns" class="form-control" multiple size="3">
+                    </select>
+                    <small>Ctrl/Cmd 키를 누른 채로 여러 컬럼 선택 가능</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="rel-cardinality">카디널리티 (Cardinality):</label>
+                    <select id="rel-cardinality" class="form-control">
+                        <option value="1:N">1:N (One to Many)</option>
+                        <option value="1:1">1:1 (One to One)</option>
+                        <option value="N:N">N:N (Many to Many)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="rel-on-delete">ON DELETE:</label>
+                    <select id="rel-on-delete" class="form-control">
+                        <option value="CASCADE">CASCADE - 부모 삭제시 자식도 삭제</option>
+                        <option value="SET NULL">SET NULL - 부모 삭제시 자식 NULL</option>
+                        <option value="RESTRICT" selected>RESTRICT - 자식 있으면 삭제 불가</option>
+                        <option value="NO ACTION">NO ACTION - 아무 동작 안함</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="rel-on-update">ON UPDATE:</label>
+                    <select id="rel-on-update" class="form-control">
+                        <option value="CASCADE" selected>CASCADE - 부모 변경시 자식도 변경</option>
+                        <option value="SET NULL">SET NULL - 부모 변경시 자식 NULL</option>
+                        <option value="RESTRICT">RESTRICT - 자식 있으면 변경 불가</option>
+                        <option value="NO ACTION">NO ACTION - 아무 동작 안함</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="rel-comment">설명:</label>
+                    <textarea id="rel-comment" class="form-control" rows="2" placeholder="관계 설명"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-save-relationship" class="btn btn-success">저장</button>
+                <button class="btn btn-secondary modal-close">취소</button>
             </div>
         </div>
     </div>

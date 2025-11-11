@@ -277,6 +277,23 @@ body {
     marker-end: url(#arrowhead);
 }
 
+.relationship-group {
+    cursor: pointer;
+}
+
+.relationship-group:hover .relationship-line {
+    stroke: var(--primary-color);
+    stroke-width: 3;
+}
+
+.cardinality-text {
+    fill: #E74C3C;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    pointer-events: none;
+}
+
 /* Context Menu */
 .context-menu {
     position: absolute;
