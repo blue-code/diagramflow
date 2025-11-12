@@ -8,6 +8,8 @@ class ERDEditor {
         this.selectedRelationship = null;
         this.draggedTable = null;
         this.dragOffset = { x: 0, y: 0 };
+        this.autoSaveTimeout = null;
+        this.autoSaveDelay = 2000; // 2 seconds debounce
 
         this.init();
     }
@@ -36,7 +38,43 @@ class ERDEditor {
         document.getElementById('diagram-db-type').value = this.diagram.database_type;
     }
 
-    async saveDiagram() {
+    // Auto-save with debounce
+    autoSave() {
+        // Auto-save even for new diagrams (will create them automatically)
+        // Clear existing timeout
+        if (this.autoSaveTimeout) {
+            clearTimeout(this.autoSaveTimeout);
+        }
+
+        // Set saving status
+        this.setSaveStatus('saving', '저장 중...');
+
+        // Debounce: wait before actually saving
+        this.autoSaveTimeout = setTimeout(() => {
+            this._saveDiagram();
+        }, this.autoSaveDelay);
+    }
+
+    // Update save status indicator
+    setSaveStatus(status, text) {
+        const statusElement = document.getElementById('save-status');
+        const textElement = statusElement.querySelector('.save-status-text');
+
+        // Remove all status classes
+        statusElement.classList.remove('saving', 'saved', 'error');
+
+        // Add new status class
+        if (status) {
+            statusElement.classList.add(status);
+        }
+
+        // Update text
+        if (text) {
+            textElement.textContent = text;
+        }
+    }
+
+    async _saveDiagram() {
         try {
             this.diagram.name = document.getElementById('diagram-name').value || 'Untitled Diagram';
             this.diagram.database_type = document.getElementById('diagram-db-type').value;
@@ -63,19 +101,28 @@ class ERDEditor {
                 // Clear any saved draft since save succeeded
                 this.clearDraft();
 
-                this.showNotification('다이어그램이 저장되었습니다.', 'success');
+                this.setSaveStatus('saved', '저장됨');
+                // Auto-hide success status after 3 seconds
+                setTimeout(() => {
+                    if (document.getElementById('save-status').classList.contains('saved')) {
+                        this.setSaveStatus('', '저장됨');
+                    }
+                }, 3000);
             } else if (result.error_type === 'version_conflict') {
                 // Version conflict - save current state as draft before reloading
                 this.saveDraft();
+                this.setSaveStatus('error', '충돌 발생');
 
                 if (confirm(result.message + '\n\n작업 중이던 내용은 임시 저장되었습니다.\n다이어그램을 다시 불러오시겠습니까?')) {
                     await this.loadDiagramById(this.currentDiagramId);
                 }
             } else {
+                this.setSaveStatus('error', '저장 실패');
                 this.showNotification('저장 실패: ' + result.error, 'error');
             }
         } catch (error) {
             console.error('Save error:', error);
+            this.setSaveStatus('error', '저장 실패');
             this.showNotification('저장 중 오류가 발생했습니다.', 'error');
         }
     }
@@ -301,6 +348,7 @@ class ERDEditor {
 
         this.hideModal('relationship-modal');
         this.render();
+        this.autoSave(); // Trigger auto-save
     }
 
     deleteRelationship(relId) {
@@ -321,6 +369,7 @@ class ERDEditor {
 
             this.diagram.relationships = this.diagram.relationships.filter(r => r.id !== relId);
             this.render();
+            this.autoSave(); // Trigger auto-save
         }
     }
 
@@ -406,6 +455,7 @@ class ERDEditor {
         this.diagram.tables.push(table);
         this.render();
         this.editTable(table.id);
+        // Note: Auto-save will be triggered when user saves the table modal
     }
 
     editTable(tableId) {
@@ -457,6 +507,7 @@ class ERDEditor {
 
         this.hideModal('table-modal');
         this.render();
+        this.autoSave(); // Trigger auto-save
     }
 
     deleteTable(tableId) {
@@ -466,6 +517,7 @@ class ERDEditor {
                 r => r.source_table_id !== tableId && r.target_table_id !== tableId
             );
             this.render();
+            this.autoSave(); // Trigger auto-save
         }
     }
 
@@ -780,7 +832,6 @@ class ERDEditor {
             }
         });
 
-        document.getElementById('btn-save').addEventListener('click', () => this.saveDiagram());
         document.getElementById('btn-load').addEventListener('click', () => this.loadDiagram());
         document.getElementById('btn-export-ddl').addEventListener('click', () => this.exportDDL());
         document.getElementById('btn-add-table').addEventListener('click', () => this.addTable());
@@ -802,13 +853,13 @@ class ERDEditor {
             this.loadSampleDiagram();
         });
 
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            // Ctrl+S or Cmd+S to save
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                e.preventDefault();
-                this.saveDiagram();
-            }
+        // Auto-save on diagram name or database type change
+        document.getElementById('diagram-name').addEventListener('input', () => {
+            this.autoSave();
+        });
+
+        document.getElementById('diagram-db-type').addEventListener('change', () => {
+            this.autoSave();
         });
 
         document.getElementById('btn-add-column').addEventListener('click', () => {
@@ -866,7 +917,10 @@ class ERDEditor {
     }
 
     stopDrag() {
-        this.draggedTable = null;
+        if (this.draggedTable) {
+            this.draggedTable = null;
+            this.autoSave(); // Trigger auto-save after dragging
+        }
     }
 
     showContextMenu(e, table) {

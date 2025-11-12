@@ -17,9 +17,12 @@
                 <span class="version">v0.3.0</span>
             </div>
             <div class="header-right">
+                <div id="save-status" class="save-status" title="자동 저장 상태">
+                    <span class="save-status-icon">💾</span>
+                    <span class="save-status-text">저장됨</span>
+                </div>
                 <button id="btn-help" class="btn btn-secondary" title="사용 가이드">❓ 도움말</button>
                 <button id="btn-new" class="btn btn-primary" title="새로운 다이어그램 시작">새 다이어그램</button>
-                <button id="btn-save" class="btn btn-success" title="현재 다이어그램 저장">💾 저장</button>
                 <button id="btn-load" class="btn btn-info" title="저장된 다이어그램 불러오기">📂 불러오기</button>
                 <button id="btn-export-ddl" class="btn btn-warning" title="SQL DDL 코드 내보내기">📤 DDL 내보내기</button>
             </div>
@@ -118,8 +121,8 @@
                             <div class="guide-step">
                                 <div class="step-number">4</div>
                                 <div class="step-content">
-                                    <h3>💾 저장하기</h3>
-                                    <p>상단의 저장 버튼으로 작업 내용을 보관하세요</p>
+                                    <h3>💾 자동 저장</h3>
+                                    <p>모든 변경사항이 자동으로 저장됩니다</p>
                                 </div>
                             </div>
                         </div>
@@ -397,7 +400,7 @@
                     <ul class="help-list">
                         <li>테이블을 우클릭하면 편집/삭제 메뉴가 나타납니다</li>
                         <li>관계선을 클릭하면 관계 설정을 편집할 수 있습니다</li>
-                        <li>Ctrl+S (Mac: Cmd+S)로 빠르게 저장할 수 있습니다</li>
+                        <li>모든 변경사항은 자동으로 저장됩니다 (저장 버튼 불필요)</li>
                         <li>여러 사용자가 동시에 작업할 경우 버전 충돌이 발생하면 병합 옵션이 제공됩니다</li>
                     </ul>
                 </div>

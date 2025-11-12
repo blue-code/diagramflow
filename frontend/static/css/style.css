@@ -1187,3 +1187,56 @@ body {
         padding: 2rem 1.5rem;
     }
 }
+
+/* Save Status Indicator */
+.save-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.save-status-icon {
+    font-size: 1rem;
+    animation: none;
+}
+
+.save-status-text {
+    letter-spacing: 0.3px;
+}
+
+.save-status.saving {
+    background: rgba(237, 137, 54, 0.3);
+    border-color: rgba(237, 137, 54, 0.5);
+}
+
+.save-status.saving .save-status-icon {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.save-status.saved {
+    background: rgba(72, 187, 120, 0.3);
+    border-color: rgba(72, 187, 120, 0.5);
+}
+
+.save-status.error {
+    background: rgba(245, 101, 101, 0.3);
+    border-color: rgba(245, 101, 101, 0.5);
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
