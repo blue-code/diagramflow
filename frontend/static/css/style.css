@@ -462,6 +462,18 @@ body {
     font-weight: 500;
 }
 
+.pk-column {
+    fill: var(--primary-color);
+    font-weight: 700;
+    filter: drop-shadow(0 1px 2px rgba(102, 126, 234, 0.3));
+}
+
+.fk-column {
+    fill: var(--info-color);
+    font-weight: 600;
+    font-style: italic;
+}
+
 .pk-indicator {
     fill: var(--warning-color);
     font-weight: bold;
@@ -661,7 +673,7 @@ body {
 
 .column-row {
     display: grid;
-    grid-template-columns: 2fr 2fr 1fr 1fr auto auto auto;
+    grid-template-columns: 2fr 2fr 1.2fr 0.8fr auto auto auto auto;
     gap: 0.625rem;
     margin-bottom: 0.75rem;
     padding: 0.875rem;
@@ -709,6 +721,54 @@ body {
     display: flex;
     align-items: center;
     gap: 0.375rem;
+}
+
+.pk-label {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 0.375rem 0.625rem;
+    border-radius: 6px;
+    color: white !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+}
+
+.pk-label:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.pk-label input[type="checkbox"] {
+    margin: 0;
+}
+
+.pk-label .pk-text {
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+.nn-label {
+    background: var(--gray-200);
+    padding: 0.375rem 0.625rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.nn-label:hover {
+    background: var(--gray-300);
+}
+
+.fk-badge {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
 }
 
 .btn-remove-column {

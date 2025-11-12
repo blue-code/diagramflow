@@ -432,8 +432,15 @@ class ERDEditor {
         // Update columns from editor
         const columnRows = document.querySelectorAll('.column-row');
         this.selectedTable.columns = Array.from(columnRows).map(row => {
+            const columnId = row.dataset.columnId;
+
+            // Find existing column to preserve foreign_key
+            const existingColumn = columnId
+                ? this.selectedTable.columns.find(c => c.id === columnId)
+                : null;
+
             return {
-                id: row.dataset.columnId || this.generateId(),
+                id: columnId || this.generateId(),
                 physical_name: row.querySelector('.col-physical-name').value,
                 logical_name: row.querySelector('.col-logical-name').value,
                 data_type: row.querySelector('.col-data-type').value,
@@ -444,7 +451,7 @@ class ERDEditor {
                 auto_increment: false,
                 default_value: null,
                 comment: '',
-                foreign_key: null
+                foreign_key: existingColumn?.foreign_key || null  // Preserve FK
             };
         });
 
@@ -476,6 +483,9 @@ class ERDEditor {
         row.className = 'column-row';
         if (column) row.dataset.columnId = column.id;
 
+        const isFK = column?.foreign_key && column?.foreign_key.table_id;
+        const fkInfo = isFK ? `<span class="fk-badge" title="Foreign Key">FK</span>` : '';
+
         row.innerHTML = `
             <input type="text" class="col-physical-name" placeholder="column_name" value="${column?.physical_name || ''}">
             <input type="text" class="col-logical-name" placeholder="컬럼명" value="${column?.logical_name || ''}">
@@ -488,8 +498,15 @@ class ERDEditor {
                 <option value="boolean" ${column?.data_type === 'boolean' ? 'selected' : ''}>BOOLEAN</option>
             </select>
             <input type="number" class="col-length" placeholder="길이" value="${column?.length || ''}" style="width: 60px;">
-            <label><input type="checkbox" class="col-pk" ${column?.primary_key ? 'checked' : ''}> PK</label>
-            <label><input type="checkbox" class="col-not-null" ${!column?.nullable ? 'checked' : ''}> NN</label>
+            <label class="pk-label" title="Primary Key">
+                <input type="checkbox" class="col-pk" ${column?.primary_key ? 'checked' : ''}>
+                <span class="pk-text">🔑 PK</span>
+            </label>
+            <label class="nn-label" title="Not Null">
+                <input type="checkbox" class="col-not-null" ${!column?.nullable ? 'checked' : ''}>
+                <span>NN</span>
+            </label>
+            ${fkInfo}
             <button class="btn-remove-column" onclick="this.parentElement.remove()">삭제</button>
         `;
 
@@ -567,10 +584,54 @@ class ERDEditor {
             text.setAttribute('x', table.position.x + 10);
             text.setAttribute('y', table.position.y + headerHeight + 15 + (index * rowHeight));
 
-            const pkMark = column.primary_key ? '🔑 ' : '   ';
+            // Determine if column is PK or FK
+            const isPK = column.primary_key;
+            const isFK = column.foreign_key && column.foreign_key.table_id;
+
+            // Choose icon based on column type
+            let icon = '   ';
+            if (isPK && isFK) {
+                icon = '🔑🔗 ';  // Both PK and FK
+            } else if (isPK) {
+                icon = '🔑 ';    // Primary Key
+            } else if (isFK) {
+                icon = '🔗 ';    // Foreign Key
+            }
+
             const colName = column.logical_name || column.physical_name;
-            const dataType = column.data_type.toUpperCase();
-            text.textContent = `${pkMark}${colName} (${dataType})`;
+
+            // Format data type with length
+            let dataType = column.data_type.toUpperCase();
+            if (column.length) {
+                // Add length for types that support it
+                if (['STRING', 'VARCHAR', 'CHAR'].includes(dataType)) {
+                    dataType = `VARCHAR(${column.length})`;
+                } else if (['INTEGER', 'INT'].includes(dataType)) {
+                    dataType = `INT(${column.length})`;
+                } else if (['BIGINT'].includes(dataType)) {
+                    dataType = `BIGINT(${column.length})`;
+                }
+            } else {
+                // Use default display names
+                if (dataType === 'STRING') {
+                    dataType = 'VARCHAR';
+                } else if (dataType === 'INTEGER') {
+                    dataType = 'INT';
+                }
+            }
+
+            // Add nullable indicator
+            const nullableIndicator = column.nullable ? '' : ' NN';
+
+            text.textContent = `${icon}${colName} ${dataType}${nullableIndicator}`;
+
+            // Add different styling for FK columns
+            if (isFK && !isPK) {
+                text.classList.add('fk-column');
+            }
+            if (isPK) {
+                text.classList.add('pk-column');
+            }
 
             g.appendChild(text);
         });
