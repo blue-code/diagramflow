@@ -138,6 +138,15 @@ class CollaborationClient {
             this.onChatMessage(data);
         });
 
+        // Diagram save events
+        this.socket.on('diagram_saved', (data) => {
+            this.onDiagramSaved(data);
+        });
+
+        this.socket.on('reload_diagram', (data) => {
+            this.onReloadDiagram(data);
+        });
+
         // Error events
         this.socket.on('error', (data) => {
             console.error('Server error:', data);
@@ -424,6 +433,14 @@ class CollaborationClient {
 
     onChatMessage(data) {
         console.log(`${data.user_name}: ${data.message}`);
+    }
+
+    onDiagramSaved(data) {
+        console.log(`Diagram saved by user ${data.user_name} (version: ${data.version})`);
+    }
+
+    onReloadDiagram(data) {
+        console.log('Reload diagram requested:', data.reason);
     }
 
     onError(data) {

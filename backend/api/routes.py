@@ -11,9 +11,11 @@ from ..utils.exporters import ExcelExporter, HTMLExporter
 from ..utils.git_integration import GitIntegration
 from ..utils.normalization_analyzer import NormalizationAnalyzer
 from ..utils.workbench_converter import WorkbenchConverter
+from ..collaboration.websocket_handler import socketio
 from config import MODELS_DIR
 import os
 import tempfile
+from datetime import datetime
 
 
 def create_api_blueprint():
@@ -67,20 +69,39 @@ def create_api_blueprint():
 
     @api.route('/diagrams/<diagram_id>', methods=['PUT'])
     def update_diagram(diagram_id):
-        """Update a diagram"""
+        """Update a diagram with version control"""
         try:
             data = request.get_json()
             diagram = Diagram(**data)
 
-            # Save to file
+            # Save to file with version checking
             file_path = os.path.join(MODELS_DIR, f"{diagram_id}.json")
-            save_diagram(diagram, file_path)
 
-            return jsonify({
-                "success": True,
-                "diagram": diagram.model_dump(mode='json'),
-                "message": "Diagram updated successfully"
-            })
+            try:
+                save_diagram(diagram, file_path, check_version=True)
+
+                # Notify other users via WebSocket
+                socketio.emit('diagram_saved', {
+                    'diagram_id': diagram_id,
+                    'version': diagram.version,
+                    'timestamp': datetime.now().isoformat()
+                }, room=diagram_id)
+
+                return jsonify({
+                    "success": True,
+                    "diagram": diagram.model_dump(mode='json'),
+                    "message": "Diagram updated successfully"
+                })
+
+            except ValueError as ve:
+                # Version conflict detected
+                return jsonify({
+                    "success": False,
+                    "error": str(ve),
+                    "error_type": "version_conflict",
+                    "message": "The diagram was modified by another user. Please reload and try again."
+                }), 409  # 409 Conflict
+
         except Exception as e:
             return jsonify({"success": False, "error": str(e)}), 400
 

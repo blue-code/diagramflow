@@ -4,10 +4,12 @@ Serialization utilities for saving and loading diagrams
 
 import json
 import os
+import shutil
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
 from ..models.diagram import Diagram
+from .file_lock import file_lock
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -19,39 +21,76 @@ class DateTimeEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-def save_diagram(diagram: Diagram, file_path: str) -> None:
+def save_diagram(diagram: Diagram, file_path: str, check_version: bool = True) -> None:
     """
-    Save a diagram to a JSON file.
+    Save a diagram to a JSON file with file locking and version control.
 
     Args:
         diagram: Diagram object to save
         file_path: Path to save the file
+        check_version: If True, check version before saving (optimistic locking)
 
     Raises:
         IOError: If file cannot be written
+        ValueError: If version conflict detected
     """
     # Ensure directory exists
     directory = os.path.dirname(file_path)
     if directory:
         os.makedirs(directory, exist_ok=True)
 
-    # Update timestamp
-    diagram.updated_at = datetime.now()
+    # Acquire file lock to prevent concurrent writes
+    try:
+        with file_lock(file_path, timeout=15.0):
+            # Check for version conflicts (optimistic concurrency control)
+            if check_version and os.path.exists(file_path):
+                try:
+                    existing_diagram = load_diagram(file_path, use_lock=False)
 
-    # Convert to JSON using Pydantic's model_dump
-    diagram_dict = diagram.model_dump(mode='json')
+                    # Compare versions
+                    if existing_diagram.version != diagram.version:
+                        raise ValueError(
+                            f"Version conflict: file has version {existing_diagram.version}, "
+                            f"but trying to save version {diagram.version}. "
+                            f"The file was modified by another user."
+                        )
 
-    # Write to file with pretty formatting
-    with open(file_path, 'w', encoding='utf-8') as f:
-        json.dump(diagram_dict, f, indent=2, ensure_ascii=False, cls=DateTimeEncoder)
+                    # Increment version for next save
+                    diagram.version = existing_diagram.version + ".0.1"  # Micro version bump
+
+                except FileNotFoundError:
+                    pass  # File doesn't exist yet, proceed
+
+            # Create backup before saving
+            if os.path.exists(file_path):
+                backup_path = file_path + '.backup'
+                shutil.copy2(file_path, backup_path)
+
+            # Update timestamp
+            diagram.updated_at = datetime.now()
+
+            # Convert to JSON using Pydantic's model_dump
+            diagram_dict = diagram.model_dump(mode='json')
+
+            # Write to temporary file first (atomic write)
+            temp_path = file_path + '.tmp'
+            with open(temp_path, 'w', encoding='utf-8') as f:
+                json.dump(diagram_dict, f, indent=2, ensure_ascii=False, cls=DateTimeEncoder)
+
+            # Atomic rename
+            os.replace(temp_path, file_path)
+
+    except TimeoutError:
+        raise IOError(f"Could not acquire lock for {file_path}. File may be locked by another process.")
 
 
-def load_diagram(file_path: str) -> Diagram:
+def load_diagram(file_path: str, use_lock: bool = True) -> Diagram:
     """
     Load a diagram from a JSON file.
 
     Args:
         file_path: Path to the JSON file
+        use_lock: If True, use file locking (default: True)
 
     Returns:
         Diagram object
@@ -64,8 +103,18 @@ def load_diagram(file_path: str) -> Diagram:
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Diagram file not found: {file_path}")
 
-    with open(file_path, 'r', encoding='utf-8') as f:
-        diagram_dict = json.load(f)
+    if use_lock:
+        # Use file lock for reading to ensure consistency
+        try:
+            with file_lock(file_path, timeout=10.0):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    diagram_dict = json.load(f)
+        except TimeoutError:
+            raise IOError(f"Could not acquire lock for reading {file_path}")
+    else:
+        # Direct read without locking (used internally during save)
+        with open(file_path, 'r', encoding='utf-8') as f:
+            diagram_dict = json.load(f)
 
     # Convert to Diagram using Pydantic validation
     return Diagram(**diagram_dict)

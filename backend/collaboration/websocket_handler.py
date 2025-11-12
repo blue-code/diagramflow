@@ -256,6 +256,32 @@ def register_socket_events():
                 'timestamp': data.get('timestamp')
             }, room=diagram_id)
 
+    @socketio.on('diagram_saved')
+    def handle_diagram_saved(data):
+        """Handle diagram save notification"""
+        diagram_id = data.get('diagram_id')
+        version = data.get('version')
+
+        if diagram_id:
+            user_info = active_sessions.get(diagram_id, {}).get(request.sid, {})
+            emit('diagram_saved', {
+                'user_id': request.sid,
+                'user_name': user_info.get('name', 'Anonymous'),
+                'version': version,
+                'timestamp': data.get('timestamp')
+            }, room=diagram_id, skip_sid=request.sid)
+
+    @socketio.on('request_reload')
+    def handle_request_reload(data):
+        """Handle request to reload diagram (after external save)"""
+        diagram_id = data.get('diagram_id')
+
+        if diagram_id:
+            emit('reload_diagram', {
+                'diagram_id': diagram_id,
+                'reason': 'File was modified by another user'
+            }, room=diagram_id)
+
 
 # Import request for socket handlers
 from flask import request

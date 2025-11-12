@@ -57,14 +57,67 @@ class ERDEditor {
 
             if (result.success) {
                 this.currentDiagramId = result.diagram.id;
-                alert('다이어그램이 저장되었습니다.');
+                // Update local diagram with new version
+                this.diagram = result.diagram;
+
+                // Clear any saved draft since save succeeded
+                this.clearDraft();
+
+                this.showNotification('다이어그램이 저장되었습니다.', 'success');
+            } else if (result.error_type === 'version_conflict') {
+                // Version conflict - save current state as draft before reloading
+                this.saveDraft();
+
+                if (confirm(result.message + '\n\n작업 중이던 내용은 임시 저장되었습니다.\n다이어그램을 다시 불러오시겠습니까?')) {
+                    await this.loadDiagramById(this.currentDiagramId);
+                }
             } else {
-                alert('저장 실패: ' + result.error);
+                this.showNotification('저장 실패: ' + result.error, 'error');
             }
         } catch (error) {
             console.error('Save error:', error);
-            alert('저장 중 오류가 발생했습니다.');
+            this.showNotification('저장 중 오류가 발생했습니다.', 'error');
         }
+    }
+
+    showNotification(message, type = 'info') {
+        // Create notification element if it doesn't exist
+        let notification = document.getElementById('notification');
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.id = 'notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                z-index: 10000;
+                font-weight: 500;
+                animation: slideIn 0.3s ease-out;
+            `;
+            document.body.appendChild(notification);
+        }
+
+        // Set colors based on type
+        const colors = {
+            success: { bg: '#48bb78', text: 'white' },
+            error: { bg: '#f56565', text: 'white' },
+            warning: { bg: '#ed8936', text: 'white' },
+            info: { bg: '#4299e1', text: 'white' }
+        };
+
+        const color = colors[type] || colors.info;
+        notification.style.backgroundColor = color.bg;
+        notification.style.color = color.text;
+        notification.textContent = message;
+        notification.style.display = 'block';
+
+        // Auto hide after 3 seconds
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 3000);
     }
 
     async loadDiagram() {
@@ -101,11 +154,22 @@ class ERDEditor {
             const result = await response.json();
 
             if (result.success) {
-                this.diagram = result.diagram;
-                this.currentDiagramId = diagramId;
-                document.getElementById('diagram-name').value = this.diagram.name;
-                document.getElementById('diagram-db-type').value = this.diagram.database_type;
-                this.render();
+                const serverDiagram = result.diagram;
+
+                // Check if there's a saved draft for this diagram
+                if (this.hasDraft(diagramId)) {
+                    const draft = this.loadDraft(diagramId);
+
+                    // Show merge modal to let user choose
+                    this.showMergeModal(draft, serverDiagram);
+                } else {
+                    // No draft, just load server version
+                    this.diagram = serverDiagram;
+                    this.currentDiagramId = diagramId;
+                    document.getElementById('diagram-name').value = this.diagram.name;
+                    document.getElementById('diagram-db-type').value = this.diagram.database_type;
+                    this.render();
+                }
             }
         } catch (error) {
             console.error('Load diagram error:', error);
@@ -741,6 +805,181 @@ class ERDEditor {
 
     generateId() {
         return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // ==================== Draft Management ====================
+
+    saveDraft() {
+        if (!this.currentDiagramId) return;
+
+        const draftKey = `diagram_draft_${this.currentDiagramId}`;
+        const draftData = {
+            diagram: this.diagram,
+            timestamp: Date.now(),
+            diagramId: this.currentDiagramId
+        };
+
+        try {
+            localStorage.setItem(draftKey, JSON.stringify(draftData));
+            console.log('Draft saved to localStorage');
+        } catch (error) {
+            console.error('Failed to save draft:', error);
+        }
+    }
+
+    loadDraft(diagramId) {
+        const draftKey = `diagram_draft_${diagramId}`;
+
+        try {
+            const draftJson = localStorage.getItem(draftKey);
+            if (draftJson) {
+                const draftData = JSON.parse(draftJson);
+                return draftData.diagram;
+            }
+        } catch (error) {
+            console.error('Failed to load draft:', error);
+        }
+
+        return null;
+    }
+
+    hasDraft(diagramId) {
+        const draftKey = `diagram_draft_${diagramId}`;
+        return localStorage.getItem(draftKey) !== null;
+    }
+
+    clearDraft() {
+        if (!this.currentDiagramId) return;
+
+        const draftKey = `diagram_draft_${this.currentDiagramId}`;
+        localStorage.removeItem(draftKey);
+        console.log('Draft cleared from localStorage');
+    }
+
+    showMergeModal(draftDiagram, serverDiagram) {
+        // Store both versions for comparison
+        this.draftDiagram = draftDiagram;
+        this.serverDiagram = serverDiagram;
+
+        // Update merge comparison UI
+        this.renderMergeComparison(draftDiagram, serverDiagram);
+
+        // Show merge modal
+        this.showModal('merge-modal');
+    }
+
+    renderMergeComparison(draftDiagram, serverDiagram) {
+        const draftPreview = document.getElementById('draft-preview');
+        const serverPreview = document.getElementById('server-preview');
+
+        // Render draft version preview
+        draftPreview.innerHTML = this.generateDiagramSummary(draftDiagram, '내 작업 내용');
+
+        // Render server version preview
+        serverPreview.innerHTML = this.generateDiagramSummary(serverDiagram, '서버 버전');
+    }
+
+    generateDiagramSummary(diagram, title) {
+        const tableList = diagram.tables.map(table => {
+            const columnCount = table.columns.length;
+            const pkColumns = table.columns.filter(c => c.primary_key).length;
+            return `
+                <div class="table-summary-item">
+                    <strong>${table.logical_name || table.physical_name}</strong>
+                    <div class="table-summary-meta">
+                        ${columnCount} 컬럼 | ${pkColumns} PK
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="merge-section">
+                <h4>${title}</h4>
+                <div class="merge-stats">
+                    <div>테이블: ${diagram.tables.length}</div>
+                    <div>관계: ${diagram.relationships.length}</div>
+                    <div>버전: ${diagram.version}</div>
+                </div>
+                <div class="table-summary-list">
+                    ${tableList || '<div class="empty-state">테이블 없음</div>'}
+                </div>
+            </div>
+        `;
+    }
+
+    useDraftVersion() {
+        if (!this.draftDiagram) return;
+
+        // Use draft version
+        this.diagram = this.draftDiagram;
+        this.currentDiagramId = this.draftDiagram.id;
+        document.getElementById('diagram-name').value = this.diagram.name;
+        document.getElementById('diagram-db-type').value = this.diagram.database_type;
+
+        // Clear the draft since we're using it
+        this.clearDraft();
+
+        this.hideModal('merge-modal');
+        this.render();
+
+        this.showNotification('임시 저장된 작업 내용을 불러왔습니다.', 'success');
+    }
+
+    useServerVersion() {
+        if (!this.serverDiagram) return;
+
+        // Use server version
+        this.diagram = this.serverDiagram;
+        this.currentDiagramId = this.serverDiagram.id;
+        document.getElementById('diagram-name').value = this.diagram.name;
+        document.getElementById('diagram-db-type').value = this.diagram.database_type;
+
+        // Clear the draft since we're discarding it
+        this.clearDraft();
+
+        this.hideModal('merge-modal');
+        this.render();
+
+        this.showNotification('서버 버전을 불러왔습니다.', 'info');
+    }
+
+    mergeVersions() {
+        if (!this.draftDiagram || !this.serverDiagram) return;
+
+        // Smart merge: Keep server relationships but draft tables
+        const mergedDiagram = {
+            ...this.serverDiagram,
+            tables: this.draftDiagram.tables,
+            // Keep relationships from both, removing duplicates
+            relationships: this.mergRelationships(
+                this.draftDiagram.relationships,
+                this.serverDiagram.relationships
+            )
+        };
+
+        this.diagram = mergedDiagram;
+        this.currentDiagramId = mergedDiagram.id;
+        document.getElementById('diagram-name').value = this.diagram.name;
+        document.getElementById('diagram-db-type').value = this.diagram.database_type;
+
+        // Clear the draft
+        this.clearDraft();
+
+        this.hideModal('merge-modal');
+        this.render();
+
+        this.showNotification('변경 사항을 병합했습니다. 저장하여 적용하세요.', 'warning');
+    }
+
+    mergRelationships(draftRels, serverRels) {
+        // Combine relationships, preferring draft versions if IDs match
+        const relMap = new Map();
+
+        serverRels.forEach(rel => relMap.set(rel.id, rel));
+        draftRels.forEach(rel => relMap.set(rel.id, rel)); // Overwrite if exists
+
+        return Array.from(relMap.values());
     }
 }
 
