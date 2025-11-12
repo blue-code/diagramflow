@@ -19,6 +19,9 @@ openpyxl==3.1.2
 # Git integration
 GitPython==3.1.40
 
+# Cross-platform file locking
+portalocker==2.8.2
+
 # Development
 pytest==7.4.3
 black==23.12.0

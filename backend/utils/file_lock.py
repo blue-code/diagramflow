@@ -1,19 +1,21 @@
 """
 File locking utility for concurrent access control
+Cross-platform support using portalocker (Windows, Mac, Linux)
 """
 
 import os
 import time
-import fcntl
-import errno
 from contextlib import contextmanager
 from typing import Optional
+import portalocker
 
 
 class FileLock:
     """
     Cross-platform file locking mechanism.
-    Uses fcntl on Unix/Linux/Mac, falls back to simple retry on Windows.
+    Uses portalocker which automatically handles platform differences:
+    - Windows: Uses msvcrt
+    - Unix/Linux/Mac: Uses fcntl
     """
 
     def __init__(self, lock_file: str, timeout: float = 10.0, delay: float = 0.05):
@@ -26,7 +28,7 @@ class FileLock:
             delay: Delay between lock attempts (seconds)
         """
         self.lock_file = lock_file
-        self.lock_file_fd: Optional[int] = None
+        self.lock_file_handle: Optional[object] = None
         self.timeout = timeout
         self.delay = delay
 
@@ -50,50 +52,55 @@ class FileLock:
                     os.makedirs(lock_dir, exist_ok=True)
 
                 # Open/create lock file
-                self.lock_file_fd = os.open(
-                    self.lock_file,
-                    os.O_RDWR | os.O_CREAT | os.O_TRUNC
-                )
+                self.lock_file_handle = open(self.lock_file, 'w')
 
                 # Try to acquire exclusive lock (non-blocking)
-                fcntl.flock(self.lock_file_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                portalocker.lock(
+                    self.lock_file_handle,
+                    portalocker.LOCK_EX | portalocker.LOCK_NB
+                )
 
                 # Write PID to lock file
-                os.write(self.lock_file_fd, str(os.getpid()).encode())
-                os.fsync(self.lock_file_fd)
+                self.lock_file_handle.write(str(os.getpid()))
+                self.lock_file_handle.flush()
 
                 return True
 
-            except (IOError, OSError) as e:
+            except portalocker.exceptions.LockException:
                 # Lock is held by another process
-                if e.errno in (errno.EACCES, errno.EAGAIN, errno.EWOULDBLOCK):
-                    # Close file descriptor if opened
-                    if self.lock_file_fd is not None:
-                        os.close(self.lock_file_fd)
-                        self.lock_file_fd = None
+                # Close file handle if opened
+                if self.lock_file_handle is not None:
+                    try:
+                        self.lock_file_handle.close()
+                    except:
+                        pass
+                    self.lock_file_handle = None
 
-                    # Check timeout
-                    if (time.time() - start_time) >= self.timeout:
-                        return False
+                # Check timeout
+                if (time.time() - start_time) >= self.timeout:
+                    return False
 
-                    # Wait and retry
-                    time.sleep(self.delay)
-                else:
-                    # Unexpected error
-                    if self.lock_file_fd is not None:
-                        os.close(self.lock_file_fd)
-                        self.lock_file_fd = None
-                    raise
+                # Wait and retry
+                time.sleep(self.delay)
+
+            except Exception as e:
+                # Unexpected error
+                if self.lock_file_handle is not None:
+                    try:
+                        self.lock_file_handle.close()
+                    except:
+                        pass
+                    self.lock_file_handle = None
+                raise
 
     def release(self):
         """Release the file lock."""
-        if self.lock_file_fd is not None:
+        if self.lock_file_handle is not None:
             try:
-                # Release lock
-                fcntl.flock(self.lock_file_fd, fcntl.LOCK_UN)
-                # Close file
-                os.close(self.lock_file_fd)
-                self.lock_file_fd = None
+                # Unlock and close file
+                portalocker.unlock(self.lock_file_handle)
+                self.lock_file_handle.close()
+                self.lock_file_handle = None
 
                 # Remove lock file
                 try:
@@ -102,13 +109,13 @@ class FileLock:
                     pass  # Ignore if already removed
 
             except Exception as e:
-                # Ensure file descriptor is closed
-                if self.lock_file_fd is not None:
+                # Ensure file handle is closed
+                if self.lock_file_handle is not None:
                     try:
-                        os.close(self.lock_file_fd)
+                        self.lock_file_handle.close()
                     except:
                         pass
-                    self.lock_file_fd = None
+                    self.lock_file_handle = None
                 raise
 
     def __enter__(self):
@@ -124,7 +131,7 @@ class FileLock:
 
     def __del__(self):
         """Ensure lock is released on deletion."""
-        if self.lock_file_fd is not None:
+        if self.lock_file_handle is not None:
             try:
                 self.release()
             except:
