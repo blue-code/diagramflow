@@ -17,10 +17,11 @@
                 <span class="version">v0.3.0</span>
             </div>
             <div class="header-right">
-                <button id="btn-new" class="btn btn-primary">새 다이어그램</button>
-                <button id="btn-save" class="btn btn-success">저장</button>
-                <button id="btn-load" class="btn btn-info">불러오기</button>
-                <button id="btn-export-ddl" class="btn btn-warning">DDL 내보내기</button>
+                <button id="btn-help" class="btn btn-secondary" title="사용 가이드">❓ 도움말</button>
+                <button id="btn-new" class="btn btn-primary" title="새로운 다이어그램 시작">새 다이어그램</button>
+                <button id="btn-save" class="btn btn-success" title="현재 다이어그램 저장">💾 저장</button>
+                <button id="btn-load" class="btn btn-info" title="저장된 다이어그램 불러오기">📂 불러오기</button>
+                <button id="btn-export-ddl" class="btn btn-warning" title="SQL DDL 코드 내보내기">📤 DDL 내보내기</button>
             </div>
         </header>
 
@@ -46,12 +47,12 @@
 
                 <div class="sidebar-section">
                     <h3>테이블 추가</h3>
-                    <button id="btn-add-table" class="btn btn-block btn-primary">+ 테이블 추가</button>
+                    <button id="btn-add-table" class="btn btn-block btn-primary" title="새로운 테이블을 다이어그램에 추가합니다">📊 + 테이블 추가</button>
                 </div>
 
                 <div class="sidebar-section">
                     <h3>관계 추가</h3>
-                    <button id="btn-add-relationship" class="btn btn-block btn-success">+ 관계 추가</button>
+                    <button id="btn-add-relationship" class="btn btn-block btn-success" title="테이블 간의 관계(외래키)를 설정합니다">🔗 + 관계 추가</button>
                 </div>
 
                 <div class="sidebar-section">
@@ -83,6 +84,51 @@
 
             <!-- Canvas -->
             <main class="canvas-container">
+                <!-- Empty State Guide -->
+                <div id="empty-state-guide" class="empty-state-guide" style="display: none;">
+                    <div class="guide-card">
+                        <h2>🎯 ERD 다이어그램 시작하기</h2>
+                        <p class="guide-subtitle">데이터베이스 설계를 시각화하고 관리하세요</p>
+
+                        <div class="guide-steps">
+                            <div class="guide-step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <h3>📊 테이블 추가</h3>
+                                    <p>왼쪽 사이드바의 "테이블 추가" 버튼을 클릭하세요</p>
+                                </div>
+                            </div>
+
+                            <div class="guide-step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <h3>✏️ 컬럼 정의</h3>
+                                    <p>테이블 이름과 컬럼을 추가하고 PK/FK를 설정하세요</p>
+                                </div>
+                            </div>
+
+                            <div class="guide-step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <h3>🔗 관계 설정</h3>
+                                    <p>테이블 간의 관계를 연결하여 ERD를 완성하세요</p>
+                                </div>
+                            </div>
+
+                            <div class="guide-step">
+                                <div class="step-number">4</div>
+                                <div class="step-content">
+                                    <h3>💾 저장하기</h3>
+                                    <p>상단의 저장 버튼으로 작업 내용을 보관하세요</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="btn-start-guide" class="btn btn-primary btn-large">시작하기</button>
+                        <button id="btn-load-sample" class="btn btn-info btn-large">샘플 다이어그램 불러오기</button>
+                    </div>
+                </div>
+
                 <svg id="canvas" width="100%" height="100%">
                     <defs>
                         <!-- Arrow marker for relationships -->
@@ -287,6 +333,93 @@
                         </small>
                     </p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal" style="display: none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>📖 사용 가이드</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body help-content">
+                <div class="help-section">
+                    <h3>🎯 DiagramFlow란?</h3>
+                    <p>DiagramFlow는 데이터베이스 ERD(Entity Relationship Diagram)를 쉽고 빠르게 만들 수 있는 협업 도구입니다.</p>
+                </div>
+
+                <div class="help-section">
+                    <h3>🚀 빠른 시작</h3>
+                    <ol class="help-list">
+                        <li><strong>테이블 추가:</strong> 왼쪽 사이드바의 "📊 + 테이블 추가" 버튼 클릭</li>
+                        <li><strong>테이블 편집:</strong> 추가된 테이블을 클릭하거나 우클릭하여 편집</li>
+                        <li><strong>컬럼 추가:</strong> 테이블 편집 화면에서 "컬럼 추가" 버튼 클릭</li>
+                        <li><strong>PK 설정:</strong> 컬럼 행의 "🔑 PK" 체크박스 선택</li>
+                        <li><strong>관계 연결:</strong> 2개 이상의 테이블 생성 후 "🔗 + 관계 추가" 버튼 클릭</li>
+                    </ol>
+                </div>
+
+                <div class="help-section">
+                    <h3>🔑 주요 기능</h3>
+                    <div class="feature-grid">
+                        <div class="feature-item">
+                            <h4>📊 테이블 관리</h4>
+                            <p>테이블을 드래그하여 자유롭게 배치하고, 컬럼의 타입과 속성을 설정할 수 있습니다.</p>
+                        </div>
+                        <div class="feature-item">
+                            <h4>🔗 관계 설정</h4>
+                            <p>테이블 간의 1:1, 1:N, N:N 관계를 시각적으로 표현하고 외래키를 자동으로 생성합니다.</p>
+                        </div>
+                        <div class="feature-item">
+                            <h4>💾 자동 저장</h4>
+                            <p>작업 내용을 로컬에 자동 저장하며, 서버에 저장하여 언제든 불러올 수 있습니다.</p>
+                        </div>
+                        <div class="feature-item">
+                            <h4>📤 DDL 내보내기</h4>
+                            <p>작성한 ERD를 MySQL, PostgreSQL, Oracle SQL DDL 코드로 변환합니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <h3>🎨 아이콘 설명</h3>
+                    <ul class="help-list">
+                        <li><strong>🔑 PK:</strong> Primary Key (기본키) - 테이블의 고유 식별자</li>
+                        <li><strong>🔗 FK:</strong> Foreign Key (외래키) - 다른 테이블을 참조하는 키</li>
+                        <li><strong>NN:</strong> Not Null - NULL 값을 허용하지 않음</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>💡 팁</h3>
+                    <ul class="help-list">
+                        <li>테이블을 우클릭하면 편집/삭제 메뉴가 나타납니다</li>
+                        <li>관계선을 클릭하면 관계 설정을 편집할 수 있습니다</li>
+                        <li>Ctrl+S (Mac: Cmd+S)로 빠르게 저장할 수 있습니다</li>
+                        <li>여러 사용자가 동시에 작업할 경우 버전 충돌이 발생하면 병합 옵션이 제공됩니다</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3>❓ 자주 묻는 질문</h3>
+                    <div class="faq-item">
+                        <strong>Q: 테이블을 삭제하려면?</strong>
+                        <p>A: 테이블을 우클릭하고 "삭제"를 선택하거나, 테이블 편집 모달에서 삭제할 수 있습니다.</p>
+                    </div>
+                    <div class="faq-item">
+                        <strong>Q: 여러 컬럼을 PK로 지정할 수 있나요?</strong>
+                        <p>A: 네, 복합 기본키(Composite Primary Key)를 만들 수 있습니다.</p>
+                    </div>
+                    <div class="faq-item">
+                        <strong>Q: 저장한 다이어그램은 어디에 있나요?</strong>
+                        <p>A: "📂 불러오기" 버튼을 클릭하면 저장된 다이어그램 목록을 볼 수 있습니다.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary modal-close">확인</button>
             </div>
         </div>
     </div>

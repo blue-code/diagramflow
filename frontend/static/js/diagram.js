@@ -519,6 +519,18 @@ class ERDEditor {
         this.renderCanvas();
         this.renderTableList();
         this.renderStatistics();
+        this.updateEmptyStateGuide();
+    }
+
+    updateEmptyStateGuide() {
+        const emptyGuide = document.getElementById('empty-state-guide');
+
+        // Show guide only when there are no tables
+        if (this.diagram.tables.length === 0) {
+            emptyGuide.style.display = 'block';
+        } else {
+            emptyGuide.style.display = 'none';
+        }
     }
 
     renderCanvas() {
@@ -773,6 +785,31 @@ class ERDEditor {
         document.getElementById('btn-export-ddl').addEventListener('click', () => this.exportDDL());
         document.getElementById('btn-add-table').addEventListener('click', () => this.addTable());
         document.getElementById('btn-add-relationship').addEventListener('click', () => this.addRelationship());
+
+        // Help button
+        document.getElementById('btn-help').addEventListener('click', () => {
+            this.showModal('help-modal');
+        });
+
+        // Start guide button
+        document.getElementById('btn-start-guide').addEventListener('click', () => {
+            document.getElementById('empty-state-guide').style.display = 'none';
+            this.addTable();
+        });
+
+        // Load sample diagram button
+        document.getElementById('btn-load-sample').addEventListener('click', () => {
+            this.loadSampleDiagram();
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+S or Cmd+S to save
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                this.saveDiagram();
+            }
+        });
 
         document.getElementById('btn-add-column').addEventListener('click', () => {
             const container = document.getElementById('columns-container');
@@ -1041,6 +1078,379 @@ class ERDEditor {
         draftRels.forEach(rel => relMap.set(rel.id, rel)); // Overwrite if exists
 
         return Array.from(relMap.values());
+    }
+
+    // ==================== Sample Diagram ====================
+
+    loadSampleDiagram() {
+        if (this.diagram.tables.length > 0) {
+            if (!confirm('현재 다이어그램을 샘플로 교체하시겠습니까? 저장하지 않은 변경사항은 손실됩니다.')) {
+                return;
+            }
+        }
+
+        // Hide the empty state guide
+        document.getElementById('empty-state-guide').style.display = 'none';
+
+        // Create sample e-commerce ERD
+        const usersTableId = this.generateId();
+        const ordersTableId = this.generateId();
+        const productsTableId = this.generateId();
+        const orderItemsTableId = this.generateId();
+
+        // Users table
+        const usersTable = {
+            id: usersTableId,
+            physical_name: 'users',
+            logical_name: '사용자',
+            comment: '회원 정보 테이블',
+            position: { x: 100, y: 100 },
+            categories: [],
+            columns: [
+                {
+                    id: this.generateId(),
+                    physical_name: 'user_id',
+                    logical_name: '사용자ID',
+                    data_type: 'integer',
+                    length: 11,
+                    nullable: false,
+                    primary_key: true,
+                    unique: false,
+                    auto_increment: true,
+                    default_value: null,
+                    comment: '',
+                    foreign_key: null
+                },
+                {
+                    id: this.generateId(),
+                    physical_name: 'email',
+                    logical_name: '이메일',
+                    data_type: 'string',
+                    length: 100,
+                    nullable: false,
+                    primary_key: false,
+                    unique: true,
+                    auto_increment: false,
+                    default_value: null,
+                    comment: '',
+                    foreign_key: null
+                },
+                {
+                    id: this.generateId(),
+                    physical_name: 'name',
+                    logical_name: '이름',
+                    data_type: 'string',
+                    length: 50,
+                    nullable: false,
+                    primary_key: false,
+                    unique: false,
+                    auto_increment: false,
+                    default_value: null,
+                    comment: '',
+                    foreign_key: null
+                },
+                {
+                    id: this.generateId(),
+                    physical_name: 'created_at',
+                    logical_name: '가입일시',
+                    data_type: 'datetime',
+                    length: null,
+                    nullable: false,
+                    primary_key: false,
+                    unique: false,
+                    auto_increment: false,
+                    default_value: null,
+                    comment: '',
+                    foreign_key: null
+                }
+            ]
+        };
+
+        // Products table
+        const productsTable = {
+            id: productsTableId,
+            physical_name: 'products',
+            logical_name: '상품',
+            comment: '상품 정보 테이블',
+            position: { x: 500, y: 100 },
+            categories: [],
+            columns: [
+                {
+                    id: this.generateId(),
+                    physical_name: 'product_id',
+                    logical_name: '상품ID',
+                    data_type: 'integer',
+                    length: 11,
+                    nullable: false,
+                    primary_key: true,
+                    unique: false,
+                    auto_increment: true,
+                    default_value: null,
+                    comment: '',
+                    foreign_key: null
+                },
+                {
+                    id: this.generateId(),
+                    physical_name: 'name',
+                    logical_name: '상품명',
+                    data_type: 'string',
+                    length: 100,
+                    nullable: false,
+                    primary_key: false,
+                    unique: false,
+                    auto_increment: false,
+                    default_value: null,
+                    comment: '',
+                    foreign_key: null
+                },
+                {
+                    id: this.generateId(),
+                    physical_name: 'price',
+                    logical_name: '가격',
+                    data_type: 'integer',
+                    length: 11,
+                    nullable: false,
+                    primary_key: false,
+                    unique: false,
+                    auto_increment: false,
+                    default_value: null,
+                    comment: '',
+                    foreign_key: null
+                },
+                {
+                    id: this.generateId(),
+                    physical_name: 'stock',
+                    logical_name: '재고',
+                    data_type: 'integer',
+                    length: 11,
+                    nullable: false,
+                    primary_key: false,
+                    unique: false,
+                    auto_increment: false,
+                    default_value: '0',
+                    comment: '',
+                    foreign_key: null
+                }
+            ]
+        };
+
+        // Orders table
+        const ordersTable = {
+            id: ordersTableId,
+            physical_name: 'orders',
+            logical_name: '주문',
+            comment: '주문 정보 테이블',
+            position: { x: 100, y: 350 },
+            categories: [],
+            columns: [
+                {
+                    id: this.generateId(),
+                    physical_name: 'order_id',
+                    logical_name: '주문ID',
+                    data_type: 'integer',
+                    length: 11,
+                    nullable: false,
+                    primary_key: true,
+                    unique: false,
+                    auto_increment: true,
+                    default_value: null,
+                    comment: '',
+                    foreign_key: null
+                },
+                {
+                    id: this.generateId(),
+                    physical_name: 'user_id',
+                    logical_name: '사용자ID',
+                    data_type: 'integer',
+                    length: 11,
+                    nullable: false,
+                    primary_key: false,
+                    unique: false,
+                    auto_increment: false,
+                    default_value: null,
+                    comment: '',
+                    foreign_key: {
+                        table_id: usersTableId,
+                        column_id: usersTable.columns[0].id
+                    }
+                },
+                {
+                    id: this.generateId(),
+                    physical_name: 'total_amount',
+                    logical_name: '총금액',
+                    data_type: 'integer',
+                    length: 11,
+                    nullable: false,
+                    primary_key: false,
+                    unique: false,
+                    auto_increment: false,
+                    default_value: null,
+                    comment: '',
+                    foreign_key: null
+                },
+                {
+                    id: this.generateId(),
+                    physical_name: 'order_date',
+                    logical_name: '주문일시',
+                    data_type: 'datetime',
+                    length: null,
+                    nullable: false,
+                    primary_key: false,
+                    unique: false,
+                    auto_increment: false,
+                    default_value: null,
+                    comment: '',
+                    foreign_key: null
+                }
+            ]
+        };
+
+        // Order Items table
+        const orderItemsTable = {
+            id: orderItemsTableId,
+            physical_name: 'order_items',
+            logical_name: '주문상품',
+            comment: '주문 상세 정보 테이블',
+            position: { x: 500, y: 350 },
+            categories: [],
+            columns: [
+                {
+                    id: this.generateId(),
+                    physical_name: 'order_item_id',
+                    logical_name: '주문상품ID',
+                    data_type: 'integer',
+                    length: 11,
+                    nullable: false,
+                    primary_key: true,
+                    unique: false,
+                    auto_increment: true,
+                    default_value: null,
+                    comment: '',
+                    foreign_key: null
+                },
+                {
+                    id: this.generateId(),
+                    physical_name: 'order_id',
+                    logical_name: '주문ID',
+                    data_type: 'integer',
+                    length: 11,
+                    nullable: false,
+                    primary_key: false,
+                    unique: false,
+                    auto_increment: false,
+                    default_value: null,
+                    comment: '',
+                    foreign_key: {
+                        table_id: ordersTableId,
+                        column_id: ordersTable.columns[0].id
+                    }
+                },
+                {
+                    id: this.generateId(),
+                    physical_name: 'product_id',
+                    logical_name: '상품ID',
+                    data_type: 'integer',
+                    length: 11,
+                    nullable: false,
+                    primary_key: false,
+                    unique: false,
+                    auto_increment: false,
+                    default_value: null,
+                    comment: '',
+                    foreign_key: {
+                        table_id: productsTableId,
+                        column_id: productsTable.columns[0].id
+                    }
+                },
+                {
+                    id: this.generateId(),
+                    physical_name: 'quantity',
+                    logical_name: '수량',
+                    data_type: 'integer',
+                    length: 11,
+                    nullable: false,
+                    primary_key: false,
+                    unique: false,
+                    auto_increment: false,
+                    default_value: '1',
+                    comment: '',
+                    foreign_key: null
+                },
+                {
+                    id: this.generateId(),
+                    physical_name: 'price',
+                    logical_name: '단가',
+                    data_type: 'integer',
+                    length: 11,
+                    nullable: false,
+                    primary_key: false,
+                    unique: false,
+                    auto_increment: false,
+                    default_value: null,
+                    comment: '',
+                    foreign_key: null
+                }
+            ]
+        };
+
+        // Create relationships
+        const relationships = [
+            {
+                id: this.generateId(),
+                name: 'user_orders',
+                source_table_id: usersTableId,
+                target_table_id: ordersTableId,
+                source_column_ids: [usersTable.columns[0].id],
+                target_column_ids: [ordersTable.columns[1].id],
+                cardinality: '1:N',
+                on_delete: 'RESTRICT',
+                on_update: 'CASCADE',
+                comment: '사용자-주문 관계'
+            },
+            {
+                id: this.generateId(),
+                name: 'order_items_rel',
+                source_table_id: ordersTableId,
+                target_table_id: orderItemsTableId,
+                source_column_ids: [ordersTable.columns[0].id],
+                target_column_ids: [orderItemsTable.columns[1].id],
+                cardinality: '1:N',
+                on_delete: 'CASCADE',
+                on_update: 'CASCADE',
+                comment: '주문-주문상품 관계'
+            },
+            {
+                id: this.generateId(),
+                name: 'product_order_items',
+                source_table_id: productsTableId,
+                target_table_id: orderItemsTableId,
+                source_column_ids: [productsTable.columns[0].id],
+                target_column_ids: [orderItemsTable.columns[2].id],
+                cardinality: '1:N',
+                on_delete: 'RESTRICT',
+                on_update: 'CASCADE',
+                comment: '상품-주문상품 관계'
+            }
+        ];
+
+        // Update diagram
+        this.diagram = {
+            id: this.generateId(),
+            name: '샘플 쇼핑몰 ERD',
+            description: '사용자, 주문, 상품 관계를 보여주는 샘플 다이어그램',
+            database_type: 'mysql',
+            version: '1.0',
+            tables: [usersTable, productsTable, ordersTable, orderItemsTable],
+            relationships: relationships,
+            metadata: {}
+        };
+
+        this.currentDiagramId = null;
+        document.getElementById('diagram-name').value = this.diagram.name;
+        document.getElementById('diagram-db-type').value = this.diagram.database_type;
+
+        this.render();
+        this.showNotification('샘플 다이어그램을 불러왔습니다. 자유롭게 수정해보세요!', 'success');
     }
 }
 
