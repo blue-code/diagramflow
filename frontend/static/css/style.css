@@ -760,6 +760,22 @@ body {
     background: var(--gray-300);
 }
 
+.idx-label {
+    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+    padding: 0.375rem 0.625rem;
+    border-radius: 6px;
+    color: white !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(237, 137, 54, 0.2);
+}
+
+.idx-label:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(237, 137, 54, 0.3);
+}
+
 .fk-badge {
     background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
     color: white;

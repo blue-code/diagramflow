@@ -522,6 +522,7 @@ class ERDEditor {
         document.getElementById('table-physical-name').value = table.physical_name || '';
         document.getElementById('table-logical-name').value = table.logical_name || '';
         document.getElementById('table-comment').value = table.comment || '';
+        document.getElementById('table-category').value = table.category || '';
 
         this.renderColumnEditor(table);
         this.showModal('table-modal');
@@ -535,6 +536,7 @@ class ERDEditor {
         this.selectedTable.physical_name = document.getElementById('table-physical-name').value;
         this.selectedTable.logical_name = document.getElementById('table-logical-name').value;
         this.selectedTable.comment = document.getElementById('table-comment').value;
+        this.selectedTable.category = document.getElementById('table-category').value;
 
         // Update columns from editor
         const columnRows = document.querySelectorAll('.column-row');
@@ -554,6 +556,7 @@ class ERDEditor {
                 length: parseInt(row.querySelector('.col-length').value) || null,
                 nullable: !row.querySelector('.col-not-null').checked,
                 primary_key: row.querySelector('.col-pk').checked,
+                indexed: row.querySelector('.col-indexed').checked,
                 unique: false,
                 auto_increment: false,
                 default_value: null,
@@ -615,6 +618,10 @@ class ERDEditor {
             <label class="nn-label" title="Not Null">
                 <input type="checkbox" class="col-not-null" ${!column?.nullable ? 'checked' : ''}>
                 <span>NN</span>
+            </label>
+            <label class="idx-label" title="Index">
+                <input type="checkbox" class="col-indexed" ${column?.indexed ? 'checked' : ''}>
+                <span>IDX</span>
             </label>
             ${fkInfo}
             <button class="btn-remove-column" onclick="this.parentElement.remove()">삭제</button>
