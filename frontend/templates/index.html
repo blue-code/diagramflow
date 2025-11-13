@@ -21,7 +21,10 @@
                     <span class="save-status-icon">💾</span>
                     <span class="save-status-text">저장됨</span>
                 </div>
+                <button id="btn-undo" class="btn btn-secondary" title="실행 취소 (Ctrl+Z)" disabled>↶ 실행 취소</button>
+                <button id="btn-redo" class="btn btn-secondary" title="다시 실행 (Ctrl+Y)" disabled>↷ 다시 실행</button>
                 <button id="btn-help" class="btn btn-secondary" title="사용 가이드">❓ 도움말</button>
+                <button id="btn-export-image" class="btn btn-success" title="PNG 이미지로 내보내기">🖼️ 이미지 내보내기</button>
                 <button id="btn-new" class="btn btn-primary" title="새로운 다이어그램 시작">새 다이어그램</button>
                 <button id="btn-load" class="btn btn-info" title="저장된 다이어그램 불러오기">📂 불러오기</button>
                 <button id="btn-export-ddl" class="btn btn-warning" title="SQL DDL 코드 내보내기">📤 DDL 내보내기</button>
@@ -60,6 +63,9 @@
 
                 <div class="sidebar-section">
                     <h3>테이블 목록</h3>
+                    <div class="form-group">
+                        <input type="text" id="table-search" class="form-control" placeholder="🔍 테이블 검색...">
+                    </div>
                     <div id="table-list" class="table-list">
                         <!-- Tables will be listed here -->
                         <div class="empty-state">테이블이 없습니다</div>
@@ -87,6 +93,13 @@
 
             <!-- Canvas -->
             <main class="canvas-container">
+                <!-- Zoom Controls -->
+                <div class="zoom-controls">
+                    <button id="btn-zoom-in" class="zoom-btn" title="확대 (Zoom In)">+</button>
+                    <button id="btn-zoom-out" class="zoom-btn" title="축소 (Zoom Out)">−</button>
+                    <button id="btn-zoom-reset" class="zoom-btn" title="초기화 (Reset)">⊙</button>
+                </div>
+
                 <!-- Empty State Guide -->
                 <div id="empty-state-guide" class="empty-state-guide" style="display: none;">
                     <div class="guide-card">

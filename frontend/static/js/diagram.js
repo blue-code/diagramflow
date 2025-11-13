@@ -11,6 +11,22 @@ class ERDEditor {
         this.autoSaveTimeout = null;
         this.autoSaveDelay = 2000; // 2 seconds debounce
 
+        // Undo/Redo history
+        this.undoStack = [];
+        this.redoStack = [];
+        this.maxHistorySize = 50;
+        this.isUndoRedoAction = false;
+
+        // Table search/filter
+        this.tableSearchFilter = '';
+
+        // Zoom/Pan state
+        this.zoom = 1.0;
+        this.panX = 0;
+        this.panY = 0;
+        this.isPanning = false;
+        this.panStart = { x: 0, y: 0 };
+
         this.init();
     }
 
@@ -245,6 +261,42 @@ class ERDEditor {
         }
     }
 
+    exportToImage() {
+        try {
+            const svg = document.getElementById('canvas');
+            const svgData = new XMLSerializer().serializeToString(svg);
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+
+                canvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${this.diagram.name || 'diagram'}.png`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    this.showNotification('이미지 내보내기 완료', 'success');
+                });
+            };
+
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+            img.src = url;
+        } catch (error) {
+            console.error('Export image error:', error);
+            this.showNotification('이미지 내보내기 중 오류가 발생했습니다.', 'error');
+        }
+    }
+
     // ==================== Relationship Management ====================
 
     addRelationship() {
@@ -319,6 +371,8 @@ class ERDEditor {
             return;
         }
 
+        this.saveHistory(); // Save history before changes
+
         const relationship = {
             id: this.selectedRelationship?.id || this.generateId(),
             name: document.getElementById('rel-name').value || null,
@@ -353,6 +407,7 @@ class ERDEditor {
 
     deleteRelationship(relId) {
         if (confirm('이 관계를 삭제하시겠습니까?')) {
+            this.saveHistory(); // Save history before deletion
             const rel = this.diagram.relationships.find(r => r.id === relId);
             if (rel) {
                 // Clear foreign_key references in target columns
@@ -475,6 +530,8 @@ class ERDEditor {
     saveTableFromModal() {
         if (!this.selectedTable) return;
 
+        this.saveHistory(); // Save history before changes
+
         this.selectedTable.physical_name = document.getElementById('table-physical-name').value;
         this.selectedTable.logical_name = document.getElementById('table-logical-name').value;
         this.selectedTable.comment = document.getElementById('table-comment').value;
@@ -512,6 +569,7 @@ class ERDEditor {
 
     deleteTable(tableId) {
         if (confirm('이 테이블을 삭제하시겠습니까?')) {
+            this.saveHistory(); // Save history before deletion
             this.diagram.tables = this.diagram.tables.filter(t => t.id !== tableId);
             this.diagram.relationships = this.diagram.relationships.filter(
                 r => r.source_table_id !== tableId && r.target_table_id !== tableId
@@ -591,6 +649,11 @@ class ERDEditor {
 
         tablesLayer.innerHTML = '';
         relationshipsLayer.innerHTML = '';
+
+        // Apply zoom and pan transform
+        const transform = `translate(${this.panX}, ${this.panY}) scale(${this.zoom})`;
+        tablesLayer.setAttribute('transform', transform);
+        relationshipsLayer.setAttribute('transform', transform);
 
         // Render relationships first (so they appear behind tables)
         this.diagram.relationships.forEach(rel => {
@@ -804,7 +867,23 @@ class ERDEditor {
             return;
         }
 
-        listContainer.innerHTML = this.diagram.tables.map(table => `
+        // Filter tables based on search term
+        const filteredTables = this.diagram.tables.filter(table => {
+            if (!this.tableSearchFilter) return true;
+
+            const searchTerm = this.tableSearchFilter.toLowerCase();
+            const physicalName = (table.physical_name || '').toLowerCase();
+            const logicalName = (table.logical_name || '').toLowerCase();
+
+            return physicalName.includes(searchTerm) || logicalName.includes(searchTerm);
+        });
+
+        if (filteredTables.length === 0) {
+            listContainer.innerHTML = '<div class="empty-state">검색 결과가 없습니다</div>';
+            return;
+        }
+
+        listContainer.innerHTML = filteredTables.map(table => `
             <div class="table-list-item" onclick="app.editTable('${table.id}')">
                 <strong>${table.logical_name || table.physical_name}</strong>
                 <div style="font-size: 0.8rem; color: #666;">
@@ -834,8 +913,18 @@ class ERDEditor {
 
         document.getElementById('btn-load').addEventListener('click', () => this.loadDiagram());
         document.getElementById('btn-export-ddl').addEventListener('click', () => this.exportDDL());
+        document.getElementById('btn-export-image').addEventListener('click', () => this.exportToImage());
         document.getElementById('btn-add-table').addEventListener('click', () => this.addTable());
         document.getElementById('btn-add-relationship').addEventListener('click', () => this.addRelationship());
+
+        // Undo/Redo buttons
+        document.getElementById('btn-undo').addEventListener('click', () => this.undo());
+        document.getElementById('btn-redo').addEventListener('click', () => this.redo());
+
+        // Zoom control buttons
+        document.getElementById('btn-zoom-in').addEventListener('click', () => this.zoomIn());
+        document.getElementById('btn-zoom-out').addEventListener('click', () => this.zoomOut());
+        document.getElementById('btn-zoom-reset').addEventListener('click', () => this.resetZoom());
 
         // Help button
         document.getElementById('btn-help').addEventListener('click', () => {
@@ -860,6 +949,26 @@ class ERDEditor {
 
         document.getElementById('diagram-db-type').addEventListener('change', () => {
             this.autoSave();
+        });
+
+        // Table search/filter
+        document.getElementById('table-search').addEventListener('input', (e) => {
+            this.tableSearchFilter = e.target.value;
+            this.renderTableList();
+        });
+
+        // Keyboard shortcuts for Undo/Redo
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+Z or Cmd+Z to undo
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                this.undo();
+            }
+            // Ctrl+Y or Cmd+Y or Ctrl+Shift+Z to redo
+            else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+                e.preventDefault();
+                this.redo();
+            }
         });
 
         document.getElementById('btn-add-column').addEventListener('click', () => {
@@ -893,10 +1002,24 @@ class ERDEditor {
             });
         });
 
-        // Canvas drag
+        // Canvas drag and pan
         const canvas = document.getElementById('canvas');
-        canvas.addEventListener('mousemove', (e) => this.onDrag(e));
-        canvas.addEventListener('mouseup', () => this.stopDrag());
+        canvas.addEventListener('mousedown', (e) => this.startPan(e));
+        canvas.addEventListener('mousemove', (e) => {
+            this.onDrag(e);
+            this.onPan(e);
+        });
+        canvas.addEventListener('mouseup', (e) => {
+            this.stopDrag();
+            this.stopPan(e);
+        });
+        canvas.addEventListener('mouseleave', (e) => {
+            this.stopDrag();
+            this.stopPan(e);
+        });
+
+        // Zoom with mouse wheel
+        canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
     }
 
     startDrag(e, table) {
@@ -918,6 +1041,7 @@ class ERDEditor {
 
     stopDrag() {
         if (this.draggedTable) {
+            this.saveHistory(); // Save history after drag
             this.draggedTable = null;
             this.autoSave(); // Trigger auto-save after dragging
         }
@@ -957,6 +1081,164 @@ class ERDEditor {
 
     generateId() {
         return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // ==================== Zoom/Pan Management ====================
+
+    zoomIn() {
+        this.zoom = Math.min(this.zoom * 1.2, 3.0); // Max zoom: 3x
+        this.render();
+    }
+
+    zoomOut() {
+        this.zoom = Math.max(this.zoom / 1.2, 0.1); // Min zoom: 0.1x
+        this.render();
+    }
+
+    resetZoom() {
+        this.zoom = 1.0;
+        this.panX = 0;
+        this.panY = 0;
+        this.render();
+    }
+
+    handleWheel(e) {
+        e.preventDefault();
+
+        // Zoom with mouse wheel
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        this.zoom = Math.max(0.1, Math.min(3.0, this.zoom * delta));
+
+        this.render();
+    }
+
+    startPan(e) {
+        // Only start panning if not clicking on a table
+        if (e.target.tagName === 'svg' || e.target.id === 'canvas') {
+            this.isPanning = true;
+            this.panStart = {
+                x: e.clientX - this.panX,
+                y: e.clientY - this.panY
+            };
+            e.target.style.cursor = 'grabbing';
+        }
+    }
+
+    onPan(e) {
+        if (this.isPanning) {
+            this.panX = e.clientX - this.panStart.x;
+            this.panY = e.clientY - this.panStart.y;
+            this.render();
+        }
+    }
+
+    stopPan(e) {
+        if (this.isPanning) {
+            this.isPanning = false;
+            if (e.target) {
+                e.target.style.cursor = 'default';
+            }
+        }
+    }
+
+    // ==================== Undo/Redo Management ====================
+
+    saveHistory() {
+        // Don't save history during undo/redo operations
+        if (this.isUndoRedoAction) return;
+
+        // Create a deep copy of current diagram state
+        const state = JSON.parse(JSON.stringify({
+            tables: this.diagram.tables,
+            relationships: this.diagram.relationships
+        }));
+
+        // Add to undo stack
+        this.undoStack.push(state);
+
+        // Limit stack size
+        if (this.undoStack.length > this.maxHistorySize) {
+            this.undoStack.shift();
+        }
+
+        // Clear redo stack when new action is performed
+        this.redoStack = [];
+
+        // Update undo/redo button states
+        this.updateUndoRedoButtons();
+    }
+
+    undo() {
+        if (this.undoStack.length === 0) return;
+
+        // Save current state to redo stack
+        const currentState = JSON.parse(JSON.stringify({
+            tables: this.diagram.tables,
+            relationships: this.diagram.relationships
+        }));
+        this.redoStack.push(currentState);
+
+        // Get previous state
+        const previousState = this.undoStack.pop();
+
+        // Restore previous state
+        this.isUndoRedoAction = true;
+        this.diagram.tables = previousState.tables;
+        this.diagram.relationships = previousState.relationships;
+        this.isUndoRedoAction = false;
+
+        // Re-render
+        this.render();
+        this.autoSave();
+
+        // Update button states
+        this.updateUndoRedoButtons();
+
+        this.showNotification('실행 취소', 'info');
+    }
+
+    redo() {
+        if (this.redoStack.length === 0) return;
+
+        // Save current state to undo stack
+        const currentState = JSON.parse(JSON.stringify({
+            tables: this.diagram.tables,
+            relationships: this.diagram.relationships
+        }));
+        this.undoStack.push(currentState);
+
+        // Get next state
+        const nextState = this.redoStack.pop();
+
+        // Restore next state
+        this.isUndoRedoAction = true;
+        this.diagram.tables = nextState.tables;
+        this.diagram.relationships = nextState.relationships;
+        this.isUndoRedoAction = false;
+
+        // Re-render
+        this.render();
+        this.autoSave();
+
+        // Update button states
+        this.updateUndoRedoButtons();
+
+        this.showNotification('다시 실행', 'info');
+    }
+
+    updateUndoRedoButtons() {
+        const undoBtn = document.getElementById('btn-undo');
+        const redoBtn = document.getElementById('btn-redo');
+
+        if (undoBtn) {
+            undoBtn.disabled = this.undoStack.length === 0;
+            undoBtn.style.opacity = this.undoStack.length === 0 ? '0.5' : '1';
+        }
+
+        if (redoBtn) {
+            redoBtn.disabled = this.redoStack.length === 0;
+            redoBtn.style.opacity = this.redoStack.length === 0 ? '0.5' : '1';
+        }
     }
 
     // ==================== Draft Management ====================

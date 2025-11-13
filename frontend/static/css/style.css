@@ -1240,3 +1240,45 @@ body {
         transform: rotate(360deg);
     }
 }
+
+/* Zoom Controls */
+.zoom-controls {
+    position: absolute;
+    bottom: 2rem;
+    right: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 100;
+    animation: slideIn 0.5s ease-out;
+}
+
+.zoom-btn {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, white 0%, var(--gray-100) 100%);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.zoom-btn:hover {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    border-color: var(--primary-dark);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: var(--shadow-lg);
+}
+
+.zoom-btn:active {
+    transform: translateY(-1px) scale(1);
+    box-shadow: var(--shadow);
+}
