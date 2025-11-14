@@ -2184,12 +2184,45 @@ class ERDEditor {
     parseDDL(ddlText) {
         const tables = [];
 
-        // Remove comments
+        // Remove single-line comments (-- style)
         ddlText = ddlText.replace(/--[^\n]*/g, '');
+
+        // Remove multi-line comments (/* */ style)
         ddlText = ddlText.replace(/\/\*[\s\S]*?\*\//g, '');
 
+        // Extract COMMENT statements before removing them
+        const tableComments = new Map();
+        const columnComments = new Map();
+
+        // Parse COMMENT ON TABLE statements
+        const tableCommentRegex = /COMMENT\s+ON\s+TABLE\s+(?:\w+\.)?["`]?(\w+)["`]?\s+IS\s+['"]([^'"]+)['"]/gi;
+        let commentMatch;
+        while ((commentMatch = tableCommentRegex.exec(ddlText)) !== null) {
+            const tableName = commentMatch[1];
+            const comment = commentMatch[2];
+            tableComments.set(tableName, comment);
+        }
+
+        // Parse COMMENT ON COLUMN statements
+        const columnCommentRegex = /COMMENT\s+ON\s+COLUMN\s+(?:\w+\.)?["`]?(\w+)["`]?\.["`]?(\w+)["`]?\s+IS\s+['"]([^'"]+)['"]/gi;
+        while ((commentMatch = columnCommentRegex.exec(ddlText)) !== null) {
+            const tableName = commentMatch[1];
+            const columnName = commentMatch[2];
+            const comment = commentMatch[3];
+
+            if (!columnComments.has(tableName)) {
+                columnComments.set(tableName, new Map());
+            }
+            columnComments.get(tableName).set(columnName, comment);
+        }
+
+        // Remove COMMENT statements from DDL text
+        ddlText = ddlText.replace(/COMMENT\s+ON\s+(TABLE|COLUMN)\s+[^;]+;/gi, '');
+
         // Split by CREATE TABLE statements
-        const createTableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([`"]?\w+[`"]?)\s*\(([\s\S]*?)\);?/gi;
+        // Updated regex to handle Oracle-style DDL with storage clauses
+        // We'll extract table definitions more carefully
+        const createTableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:\w+\.)?["`]?(\w+)["`]?\s*\(([\s\S]*?)\)[\s\S]*?;/gi;
 
         let match;
         while ((match = createTableRegex.exec(ddlText)) !== null) {
@@ -2198,6 +2231,32 @@ class ERDEditor {
 
             try {
                 const parsedTable = this.parseCreateTable(tableName, tableBody);
+
+                // Apply table comment if exists
+                if (tableComments.has(tableName)) {
+                    const tableComment = tableComments.get(tableName);
+                    parsedTable.comment = tableComment;
+                    // Use comment as logical name if not already set
+                    if (!parsedTable.logicalName) {
+                        parsedTable.logicalName = tableComment;
+                    }
+                }
+
+                // Apply column comments if exist
+                if (columnComments.has(tableName)) {
+                    const tableColumnComments = columnComments.get(tableName);
+                    parsedTable.columns.forEach(col => {
+                        if (tableColumnComments.has(col.name)) {
+                            const commentText = tableColumnComments.get(col.name);
+                            col.comment = commentText;
+                            // Use comment as logical name if not already set
+                            if (!col.logicalName) {
+                                col.logicalName = commentText;
+                            }
+                        }
+                    });
+                }
+
                 tables.push(parsedTable);
             } catch (error) {
                 console.error(`Error parsing table ${tableName}:`, error);
@@ -2306,8 +2365,8 @@ class ERDEditor {
 
         const columnName = nameMatch[1].replace(/[`"]/g, '');
 
-        // Extract data type
-        const typeMatch = columnDef.match(/^\S+\s+((?:VAR)?CHAR|(?:TINY|SMALL|MEDIUM|BIG)?INT(?:EGER)?|DECIMAL|NUMERIC|FLOAT|DOUBLE|TEXT|BLOB|DATE(?:TIME)?|TIME(?:STAMP)?|BOOLEAN|BOOL|JSON|ENUM|SET)(?:\s*\(([^)]+)\))?/i);
+        // Extract data type - enhanced to support Oracle types (VARCHAR2, NUMBER, etc.)
+        const typeMatch = columnDef.match(/^\S+\s+(VARCHAR2?|NVARCHAR2?|CHAR|NCHAR|(?:TINY|SMALL|MEDIUM|BIG)?INT(?:EGER)?|NUMBER|DECIMAL|NUMERIC|FLOAT|DOUBLE|REAL|TEXT|CLOB|BLOB|DATE(?:TIME)?|TIMESTAMP|TIME|BOOLEAN|BOOL|JSON|ENUM|SET)(?:\s*\(([^)]+)\))?/i);
 
         if (!typeMatch) return null;
 
@@ -2322,28 +2381,39 @@ class ERDEditor {
             // For ENUM/SET, extract first value as length
             if (dataType === 'ENUM' || dataType === 'SET') {
                 length = null;
-            } else if (dataType === 'DECIMAL' || dataType === 'NUMERIC') {
-                // For DECIMAL(10,2), just take the first number
-                length = parseInt(lengthMatch.split(',')[0]);
+            } else if (dataType === 'DECIMAL' || dataType === 'NUMERIC' || dataType === 'NUMBER') {
+                // For DECIMAL(10,2) or NUMBER(10,2), just take the first number
+                const parts = lengthMatch.split(',');
+                length = parseInt(parts[0]);
             } else {
                 length = parseInt(lengthMatch);
             }
         }
 
+        // Type normalization with Oracle support
         if (/^(TINY|SMALL|MEDIUM)?INT/i.test(dataType)) {
             normalizedType = 'integer';
         } else if (/^BIGINT/i.test(dataType)) {
             normalizedType = 'bigint';
-        } else if (/^(VARCHAR|CHAR)/i.test(dataType)) {
+        } else if (/^(VARCHAR2?|NVARCHAR2?|CHAR|NCHAR)/i.test(dataType)) {
             normalizedType = 'string';
-        } else if (/^TEXT|BLOB/i.test(dataType)) {
+        } else if (/^(TEXT|CLOB|BLOB)/i.test(dataType)) {
             normalizedType = 'text';
-        } else if (/^DATE|TIME/i.test(dataType)) {
+        } else if (/^DATE$/i.test(dataType)) {
+            // Oracle DATE type
+            normalizedType = 'datetime';
+        } else if (/^(DATETIME|TIMESTAMP|TIME)/i.test(dataType)) {
             normalizedType = 'datetime';
         } else if (/^(BOOL|BOOLEAN)/i.test(dataType)) {
             normalizedType = 'boolean';
-        } else if (/^(DECIMAL|NUMERIC|FLOAT|DOUBLE)/i.test(dataType)) {
-            normalizedType = 'integer'; // Use integer for numeric types
+        } else if (/^(NUMBER|DECIMAL|NUMERIC|FLOAT|DOUBLE|REAL)/i.test(dataType)) {
+            // Oracle NUMBER and other numeric types
+            if (lengthMatch && lengthMatch.includes(',')) {
+                // Has decimal places, use integer for now
+                normalizedType = 'integer';
+            } else {
+                normalizedType = 'integer';
+            }
         }
 
         // Check constraints
@@ -2360,7 +2430,7 @@ class ERDEditor {
             if (defaultValue === 'NULL') defaultValue = null;
         }
 
-        // Extract comment
+        // Extract comment (inline COMMENT in DDL)
         let comment = '';
         const commentMatch = columnDef.match(/COMMENT\s+['"]([^'"]+)['"]/i);
         if (commentMatch) {
