@@ -808,6 +808,12 @@ class ERDEditor {
         g.addEventListener('mousedown', (e) => this.startDrag(e, table));
         g.addEventListener('contextmenu', (e) => this.showContextMenu(e, table));
 
+        // Double-click to edit
+        g.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            this.editTable(table.id);
+        });
+
         container.appendChild(g);
     }
 
