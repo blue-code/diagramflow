@@ -30,6 +30,10 @@ class ERDEditor {
         // View mode: 'both', 'physical', 'logical'
         this.viewMode = 'both';
 
+        // Column Dictionary
+        this.columnDictionary = this.loadDictionary();
+        this.selectedDictEntry = null;
+
         this.init();
     }
 
@@ -37,6 +41,7 @@ class ERDEditor {
         this.createNewDiagram();
         this.bindEvents();
         this.render();
+        this.updateDictionaryCount();
     }
 
     // ==================== Diagram Management ====================
@@ -1018,6 +1023,17 @@ class ERDEditor {
             container.appendChild(this.createColumnRow());
         });
 
+        document.getElementById('btn-add-from-dict').addEventListener('click', () => this.showDictSelection());
+
+        document.getElementById('btn-manage-dictionary').addEventListener('click', () => this.showDictionaryManager());
+        document.getElementById('btn-add-dict-entry').addEventListener('click', () => this.addDictEntry());
+        document.getElementById('btn-save-dict-entry').addEventListener('click', () => this.saveDictEntry());
+
+        // Dictionary search
+        document.getElementById('dict-search').addEventListener('input', (e) => {
+            this.renderDictSelectionList(e.target.value);
+        });
+
         document.getElementById('btn-save-table').addEventListener('click', () => this.saveTableFromModal());
         document.getElementById('btn-save-relationship').addEventListener('click', () => this.saveRelationshipFromModal());
 
@@ -1829,6 +1845,260 @@ class ERDEditor {
 
         this.render();
         this.showNotification('샘플 다이어그램을 불러왔습니다. 자유롭게 수정해보세요!', 'success');
+    }
+
+    // ==================== Column Dictionary Management ====================
+
+    loadDictionary() {
+        try {
+            const dictJson = localStorage.getItem('column_dictionary');
+            if (dictJson) {
+                return JSON.parse(dictJson);
+            }
+        } catch (error) {
+            console.error('Failed to load dictionary:', error);
+        }
+
+        // Return default dictionary with common columns
+        return this.getDefaultDictionary();
+    }
+
+    getDefaultDictionary() {
+        return [
+            {
+                id: this.generateId(),
+                physical_name: 'id',
+                logical_name: 'ID',
+                data_type: 'bigint',
+                length: 20,
+                nullable: false,
+                description: '기본키 (자동 증가)'
+            },
+            {
+                id: this.generateId(),
+                physical_name: 'created_at',
+                logical_name: '생성일시',
+                data_type: 'datetime',
+                length: null,
+                nullable: false,
+                description: '레코드 생성 시간'
+            },
+            {
+                id: this.generateId(),
+                physical_name: 'updated_at',
+                logical_name: '수정일시',
+                data_type: 'datetime',
+                length: null,
+                nullable: true,
+                description: '레코드 수정 시간'
+            },
+            {
+                id: this.generateId(),
+                physical_name: 'deleted_at',
+                logical_name: '삭제일시',
+                data_type: 'datetime',
+                length: null,
+                nullable: true,
+                description: 'Soft Delete 용 삭제 시간'
+            },
+            {
+                id: this.generateId(),
+                physical_name: 'name',
+                logical_name: '이름',
+                data_type: 'string',
+                length: 100,
+                nullable: false,
+                description: '일반적인 이름 필드'
+            },
+            {
+                id: this.generateId(),
+                physical_name: 'description',
+                logical_name: '설명',
+                data_type: 'text',
+                length: null,
+                nullable: true,
+                description: '상세 설명'
+            }
+        ];
+    }
+
+    saveDictionary() {
+        try {
+            localStorage.setItem('column_dictionary', JSON.stringify(this.columnDictionary));
+            this.updateDictionaryCount();
+        } catch (error) {
+            console.error('Failed to save dictionary:', error);
+        }
+    }
+
+    updateDictionaryCount() {
+        const countElement = document.getElementById('dict-count');
+        if (countElement) {
+            countElement.textContent = this.columnDictionary.length;
+        }
+    }
+
+    showDictionaryManager() {
+        this.renderDictionaryList();
+        this.showModal('dictionary-modal');
+    }
+
+    renderDictionaryList() {
+        const listContainer = document.getElementById('dictionary-list');
+
+        if (this.columnDictionary.length === 0) {
+            listContainer.innerHTML = '<div class="empty-state">등록된 표준 컬럼이 없습니다</div>';
+            return;
+        }
+
+        listContainer.innerHTML = this.columnDictionary.map(entry => `
+            <div class="dict-item">
+                <div class="dict-item-info">
+                    <div class="dict-item-names">
+                        <strong>${entry.logical_name || entry.physical_name}</strong>
+                        <span class="dict-physical">${entry.physical_name}</span>
+                    </div>
+                    <div class="dict-item-details">
+                        ${entry.data_type.toUpperCase()}${entry.length ? `(${entry.length})` : ''}
+                        ${entry.nullable ? '' : '• NOT NULL'}
+                    </div>
+                    ${entry.description ? `<div class="dict-item-desc">${entry.description}</div>` : ''}
+                </div>
+                <div class="dict-item-actions">
+                    <button class="btn btn-sm btn-secondary" onclick="app.editDictEntry('${entry.id}')">편집</button>
+                    <button class="btn btn-sm btn-danger" onclick="app.deleteDictEntry('${entry.id}')">삭제</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    addDictEntry() {
+        this.selectedDictEntry = null;
+        document.getElementById('dict-entry-title').textContent = '표준 컬럼 추가';
+        document.getElementById('dict-physical-name').value = '';
+        document.getElementById('dict-logical-name').value = '';
+        document.getElementById('dict-data-type').value = 'string';
+        document.getElementById('dict-length').value = '';
+        document.getElementById('dict-not-null').checked = false;
+        document.getElementById('dict-description').value = '';
+        this.showModal('dict-entry-modal');
+    }
+
+    editDictEntry(entryId) {
+        const entry = this.columnDictionary.find(e => e.id === entryId);
+        if (!entry) return;
+
+        this.selectedDictEntry = entry;
+        document.getElementById('dict-entry-title').textContent = '표준 컬럼 편집';
+        document.getElementById('dict-physical-name').value = entry.physical_name;
+        document.getElementById('dict-logical-name').value = entry.logical_name || '';
+        document.getElementById('dict-data-type').value = entry.data_type;
+        document.getElementById('dict-length').value = entry.length || '';
+        document.getElementById('dict-not-null').checked = !entry.nullable;
+        document.getElementById('dict-description').value = entry.description || '';
+        this.showModal('dict-entry-modal');
+    }
+
+    saveDictEntry() {
+        const entry = {
+            id: this.selectedDictEntry?.id || this.generateId(),
+            physical_name: document.getElementById('dict-physical-name').value,
+            logical_name: document.getElementById('dict-logical-name').value,
+            data_type: document.getElementById('dict-data-type').value,
+            length: parseInt(document.getElementById('dict-length').value) || null,
+            nullable: !document.getElementById('dict-not-null').checked,
+            description: document.getElementById('dict-description').value
+        };
+
+        if (!entry.physical_name) {
+            alert('물리명을 입력해주세요.');
+            return;
+        }
+
+        if (this.selectedDictEntry) {
+            // Update existing entry
+            const index = this.columnDictionary.findIndex(e => e.id === this.selectedDictEntry.id);
+            if (index !== -1) {
+                this.columnDictionary[index] = entry;
+            }
+        } else {
+            // Add new entry
+            this.columnDictionary.push(entry);
+        }
+
+        this.saveDictionary();
+        this.hideModal('dict-entry-modal');
+        this.renderDictionaryList();
+        this.showNotification('컬럼 사전이 저장되었습니다.', 'success');
+    }
+
+    deleteDictEntry(entryId) {
+        if (confirm('이 표준 컬럼을 삭제하시겠습니까?')) {
+            this.columnDictionary = this.columnDictionary.filter(e => e.id !== entryId);
+            this.saveDictionary();
+            this.renderDictionaryList();
+            this.showNotification('표준 컬럼이 삭제되었습니다.', 'info');
+        }
+    }
+
+    showDictSelection() {
+        this.renderDictSelectionList();
+        this.showModal('dict-select-modal');
+    }
+
+    renderDictSelectionList(searchTerm = '') {
+        const listContainer = document.getElementById('dict-select-list');
+
+        const filteredDict = this.columnDictionary.filter(entry => {
+            if (!searchTerm) return true;
+            const search = searchTerm.toLowerCase();
+            return entry.physical_name.toLowerCase().includes(search) ||
+                   (entry.logical_name && entry.logical_name.toLowerCase().includes(search));
+        });
+
+        if (filteredDict.length === 0) {
+            listContainer.innerHTML = '<div class="empty-state">검색 결과가 없습니다</div>';
+            return;
+        }
+
+        listContainer.innerHTML = filteredDict.map(entry => `
+            <div class="dict-select-item" onclick="app.addColumnFromDict('${entry.id}')">
+                <div class="dict-item-names">
+                    <strong>${entry.logical_name || entry.physical_name}</strong>
+                    <span class="dict-physical">${entry.physical_name}</span>
+                </div>
+                <div class="dict-item-details">
+                    ${entry.data_type.toUpperCase()}${entry.length ? `(${entry.length})` : ''}
+                    ${entry.nullable ? '' : '• NOT NULL'}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    addColumnFromDict(entryId) {
+        const entry = this.columnDictionary.find(e => e.id === entryId);
+        if (!entry) return;
+
+        const column = {
+            physical_name: entry.physical_name,
+            logical_name: entry.logical_name,
+            data_type: entry.data_type,
+            length: entry.length,
+            nullable: entry.nullable,
+            primary_key: false,
+            indexed: false,
+            unique: false,
+            auto_increment: false,
+            default_value: null,
+            comment: entry.description || '',
+            foreign_key: null
+        };
+
+        const container = document.getElementById('columns-container');
+        container.appendChild(this.createColumnRow(column));
+
+        this.hideModal('dict-select-modal');
+        this.showNotification(`"${entry.logical_name || entry.physical_name}" 컬럼이 추가되었습니다.`, 'success');
     }
 }
 

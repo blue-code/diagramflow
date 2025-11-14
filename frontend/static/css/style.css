@@ -1298,3 +1298,122 @@ body {
     transform: translateY(-1px) scale(1);
     box-shadow: var(--shadow);
 }
+
+/* Dictionary Styles */
+.dictionary-summary {
+    padding: 0.75rem;
+    background: white;
+    border-radius: 8px;
+    margin-top: 0.75rem;
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+.dictionary-summary small {
+    color: var(--gray-600);
+}
+
+.dictionary-summary strong {
+    color: var(--primary-color);
+    font-size: 1.125rem;
+}
+
+.dictionary-info {
+    padding: 1rem;
+    background: linear-gradient(135deg, #e6f2ff 0%, #f0f9ff 100%);
+    border-left: 4px solid var(--info-color);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.dictionary-info p {
+    margin: 0;
+    color: var(--gray-700);
+    line-height: 1.6;
+}
+
+.dictionary-list {
+    max-height: 450px;
+    overflow-y: auto;
+}
+
+.dict-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.dict-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow);
+    transform: translateX(4px);
+}
+
+.dict-item-info {
+    flex: 1;
+}
+
+.dict-item-names {
+    margin-bottom: 0.5rem;
+}
+
+.dict-item-names strong {
+    font-size: 1rem;
+    color: var(--gray-800);
+    margin-right: 0.5rem;
+}
+
+.dict-physical {
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 0.875rem;
+    color: var(--gray-500);
+    background: var(--gray-100);
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+}
+
+.dict-item-details {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    font-weight: 500;
+}
+
+.dict-item-desc {
+    font-size: 0.8125rem;
+    color: var(--gray-500);
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+.dict-item-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.dict-select-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.dict-select-item {
+    padding: 1rem;
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dict-select-item:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow);
+    transform: translateX(4px);
+}

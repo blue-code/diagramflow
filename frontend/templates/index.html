@@ -81,6 +81,14 @@
                 </div>
 
                 <div class="sidebar-section">
+                    <h3>컬럼 사전</h3>
+                    <button id="btn-manage-dictionary" class="btn btn-block btn-info" title="컬럼 사전 관리">📖 사전 관리</button>
+                    <div id="dictionary-summary" class="dictionary-summary">
+                        <small>등록된 표준 컬럼: <strong id="dict-count">0</strong>개</small>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
                     <h3>통계</h3>
                     <div id="statistics" class="statistics">
                         <div class="stat-item">
@@ -205,7 +213,10 @@
                 </div>
 
                 <h3>컬럼</h3>
-                <button id="btn-add-column" class="btn btn-sm btn-primary">+ 컬럼 추가</button>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <button id="btn-add-column" class="btn btn-sm btn-primary">+ 컬럼 추가</button>
+                    <button id="btn-add-from-dict" class="btn btn-sm btn-info">📖 사전에서 추가</button>
+                </div>
                 <div id="columns-container" class="columns-container">
                     <!-- Columns will be added here -->
                 </div>
@@ -362,6 +373,100 @@
                         </small>
                     </p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Column Dictionary Modal -->
+    <div id="dictionary-modal" class="modal" style="display: none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>📖 컬럼 사전 관리</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="dictionary-info">
+                    <p>자주 사용하는 컬럼을 사전에 등록하여 일관성 있는 데이터베이스 설계를 할 수 있습니다.</p>
+                </div>
+
+                <button id="btn-add-dict-entry" class="btn btn-primary" style="margin-bottom: 1rem;">+ 표준 컬럼 추가</button>
+
+                <div id="dictionary-list" class="dictionary-list">
+                    <!-- Dictionary entries will be listed here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary modal-close">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dictionary Selection Modal -->
+    <div id="dict-select-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📖 사전에서 컬럼 선택</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <input type="text" id="dict-search" class="form-control" placeholder="🔍 컬럼 검색...">
+                </div>
+                <div id="dict-select-list" class="dict-select-list">
+                    <!-- Dictionary entries for selection will be listed here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary modal-close">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dictionary Entry Edit Modal -->
+    <div id="dict-entry-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="dict-entry-title">표준 컬럼 추가</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="dict-physical-name">물리명 (Physical Name):</label>
+                    <input type="text" id="dict-physical-name" class="form-control" placeholder="user_id">
+                </div>
+                <div class="form-group">
+                    <label for="dict-logical-name">논리명 (Logical Name):</label>
+                    <input type="text" id="dict-logical-name" class="form-control" placeholder="사용자ID">
+                </div>
+                <div class="form-group">
+                    <label for="dict-data-type">데이터 타입:</label>
+                    <select id="dict-data-type" class="form-control">
+                        <option value="string">VARCHAR</option>
+                        <option value="integer">INT</option>
+                        <option value="bigint">BIGINT</option>
+                        <option value="text">TEXT</option>
+                        <option value="datetime">DATETIME</option>
+                        <option value="boolean">BOOLEAN</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dict-length">길이:</label>
+                    <input type="number" id="dict-length" class="form-control" placeholder="255">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="dict-not-null">
+                        Not Null
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label for="dict-description">설명:</label>
+                    <textarea id="dict-description" class="form-control" rows="2" placeholder="이 컬럼에 대한 설명"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-save-dict-entry" class="btn btn-success">저장</button>
+                <button class="btn btn-secondary modal-close">취소</button>
             </div>
         </div>
     </div>
