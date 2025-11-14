@@ -62,6 +62,7 @@
                 <div class="sidebar-section">
                     <h3>테이블 추가</h3>
                     <button id="btn-add-table" class="btn btn-block btn-primary" title="새로운 테이블을 다이어그램에 추가합니다">📊 + 테이블 추가</button>
+                    <button id="btn-import-ddl" class="btn btn-block btn-secondary" title="DDL 문을 import하여 테이블을 추가합니다" style="margin-top: 0.5rem;">📥 DDL Import</button>
                 </div>
 
                 <div class="sidebar-section">
@@ -466,6 +467,42 @@
             </div>
             <div class="modal-footer">
                 <button id="btn-save-dict-entry" class="btn btn-success">저장</button>
+                <button class="btn btn-secondary modal-close">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DDL Import Modal -->
+    <div id="ddl-import-modal" class="modal" style="display: none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>📥 DDL Import</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="ddl-import-info">
+                    <p>CREATE TABLE 문을 붙여넣으면 자동으로 파싱하여 테이블을 추가합니다.</p>
+                    <p><small>💡 여러 개의 CREATE TABLE 문을 한 번에 붙여넣을 수 있습니다.</small></p>
+                </div>
+                <div class="form-group">
+                    <label for="ddl-import-input">DDL 문:</label>
+                    <textarea id="ddl-import-input" class="form-control ddl-input" rows="15" placeholder="CREATE TABLE users (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE orders (
+    order_id INT PRIMARY KEY,
+    user_id BIGINT,
+    total_amount DECIMAL(10,2),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-execute-import" class="btn btn-success">Import</button>
                 <button class="btn btn-secondary modal-close">취소</button>
             </div>
         </div>

@@ -956,6 +956,8 @@ class ERDEditor {
         document.getElementById('btn-export-ddl').addEventListener('click', () => this.exportDDL());
         document.getElementById('btn-export-image').addEventListener('click', () => this.exportToImage());
         document.getElementById('btn-add-table').addEventListener('click', () => this.addTable());
+        document.getElementById('btn-import-ddl').addEventListener('click', () => this.showDDLImport());
+        document.getElementById('btn-execute-import').addEventListener('click', () => this.executeImport());
         document.getElementById('btn-add-relationship').addEventListener('click', () => this.addRelationship());
 
         // Undo/Redo buttons
@@ -2099,6 +2101,279 @@ class ERDEditor {
 
         this.hideModal('dict-select-modal');
         this.showNotification(`"${entry.logical_name || entry.physical_name}" 컬럼이 추가되었습니다.`, 'success');
+    }
+
+    // ==================== DDL Import ====================
+
+    showDDLImport() {
+        document.getElementById('ddl-import-input').value = '';
+        this.showModal('ddl-import-modal');
+    }
+
+    executeImport() {
+        const ddlText = document.getElementById('ddl-import-input').value;
+
+        if (!ddlText.trim()) {
+            alert('DDL 문을 입력해주세요.');
+            return;
+        }
+
+        try {
+            const parsedTables = this.parseDDL(ddlText);
+
+            if (parsedTables.length === 0) {
+                alert('유효한 CREATE TABLE 문을 찾을 수 없습니다.');
+                return;
+            }
+
+            this.saveHistory(); // Save history before import
+
+            // Add tables to diagram
+            let importCount = 0;
+            const yOffset = this.diagram.tables.length * 50;
+
+            parsedTables.forEach((parsedTable, index) => {
+                const table = {
+                    id: this.generateId(),
+                    physical_name: parsedTable.tableName,
+                    logical_name: parsedTable.logicalName || '',
+                    columns: parsedTable.columns.map(col => ({
+                        id: this.generateId(),
+                        physical_name: col.name,
+                        logical_name: col.logicalName || '',
+                        data_type: col.dataType,
+                        length: col.length,
+                        nullable: col.nullable,
+                        primary_key: col.isPrimaryKey,
+                        indexed: col.isIndexed,
+                        unique: col.isUnique,
+                        auto_increment: col.autoIncrement,
+                        default_value: col.defaultValue,
+                        comment: col.comment || '',
+                        foreign_key: null  // FKs will be processed separately
+                    })),
+                    comment: parsedTable.comment || '',
+                    position: {
+                        x: 100 + (index % 3) * 300,
+                        y: 100 + yOffset + Math.floor(index / 3) * 250
+                    },
+                    category: parsedTable.category || ''
+                };
+
+                this.diagram.tables.push(table);
+                importCount++;
+            });
+
+            this.hideModal('ddl-import-modal');
+            this.render();
+            this.autoSave();
+
+            this.showNotification(`${importCount}개의 테이블을 성공적으로 import했습니다.`, 'success');
+        } catch (error) {
+            console.error('DDL Import error:', error);
+            alert('DDL 파싱 중 오류가 발생했습니다:\n' + error.message);
+        }
+    }
+
+    parseDDL(ddlText) {
+        const tables = [];
+
+        // Remove comments
+        ddlText = ddlText.replace(/--[^\n]*/g, '');
+        ddlText = ddlText.replace(/\/\*[\s\S]*?\*\//g, '');
+
+        // Split by CREATE TABLE statements
+        const createTableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([`"]?\w+[`"]?)\s*\(([\s\S]*?)\);?/gi;
+
+        let match;
+        while ((match = createTableRegex.exec(ddlText)) !== null) {
+            const tableName = match[1].replace(/[`"]/g, '');
+            const tableBody = match[2];
+
+            try {
+                const parsedTable = this.parseCreateTable(tableName, tableBody);
+                tables.push(parsedTable);
+            } catch (error) {
+                console.error(`Error parsing table ${tableName}:`, error);
+                // Continue parsing other tables
+            }
+        }
+
+        return tables;
+    }
+
+    parseCreateTable(tableName, tableBody) {
+        const columns = [];
+        const primaryKeys = [];
+
+        // Split by comma, but not within parentheses
+        const lines = this.splitTableDefinition(tableBody);
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+
+            if (!trimmed) continue;
+
+            // Check if it's a PRIMARY KEY constraint
+            if (/^PRIMARY\s+KEY/i.test(trimmed)) {
+                const pkMatch = trimmed.match(/PRIMARY\s+KEY\s*\(([^)]+)\)/i);
+                if (pkMatch) {
+                    const pkCols = pkMatch[1].split(',').map(c => c.trim().replace(/[`"]/g, ''));
+                    primaryKeys.push(...pkCols);
+                }
+                continue;
+            }
+
+            // Check if it's a FOREIGN KEY constraint
+            if (/^FOREIGN\s+KEY/i.test(trimmed) || /^CONSTRAINT/i.test(trimmed)) {
+                // Skip FK constraints for now - can be added later
+                continue;
+            }
+
+            // Check if it's a KEY/INDEX constraint
+            if (/^(KEY|INDEX|UNIQUE)/i.test(trimmed)) {
+                continue;
+            }
+
+            // Parse as column definition
+            try {
+                const column = this.parseColumnDefinition(trimmed);
+                if (column) {
+                    columns.push(column);
+                }
+            } catch (error) {
+                console.warn('Failed to parse column:', trimmed, error);
+            }
+        }
+
+        // Apply PRIMARY KEY constraints
+        primaryKeys.forEach(pkCol => {
+            const column = columns.find(c => c.name === pkCol);
+            if (column) {
+                column.isPrimaryKey = true;
+            }
+        });
+
+        return {
+            tableName,
+            logicalName: '',
+            columns,
+            comment: ''
+        };
+    }
+
+    splitTableDefinition(tableBody) {
+        const lines = [];
+        let current = '';
+        let parenDepth = 0;
+
+        for (let i = 0; i < tableBody.length; i++) {
+            const char = tableBody[i];
+
+            if (char === '(') {
+                parenDepth++;
+            } else if (char === ')') {
+                parenDepth--;
+            } else if (char === ',' && parenDepth === 0) {
+                lines.push(current.trim());
+                current = '';
+                continue;
+            }
+
+            current += char;
+        }
+
+        if (current.trim()) {
+            lines.push(current.trim());
+        }
+
+        return lines;
+    }
+
+    parseColumnDefinition(columnDef) {
+        // Remove trailing comma
+        columnDef = columnDef.replace(/,\s*$/, '');
+
+        // Extract column name (first word, possibly quoted)
+        const nameMatch = columnDef.match(/^([`"]?\w+[`"]?)/);
+        if (!nameMatch) return null;
+
+        const columnName = nameMatch[1].replace(/[`"]/g, '');
+
+        // Extract data type
+        const typeMatch = columnDef.match(/^\S+\s+((?:VAR)?CHAR|(?:TINY|SMALL|MEDIUM|BIG)?INT(?:EGER)?|DECIMAL|NUMERIC|FLOAT|DOUBLE|TEXT|BLOB|DATE(?:TIME)?|TIME(?:STAMP)?|BOOLEAN|BOOL|JSON|ENUM|SET)(?:\s*\(([^)]+)\))?/i);
+
+        if (!typeMatch) return null;
+
+        let dataType = typeMatch[1].toUpperCase();
+        const lengthMatch = typeMatch[2];
+
+        // Normalize data types
+        let normalizedType = 'string';
+        let length = null;
+
+        if (lengthMatch) {
+            // For ENUM/SET, extract first value as length
+            if (dataType === 'ENUM' || dataType === 'SET') {
+                length = null;
+            } else if (dataType === 'DECIMAL' || dataType === 'NUMERIC') {
+                // For DECIMAL(10,2), just take the first number
+                length = parseInt(lengthMatch.split(',')[0]);
+            } else {
+                length = parseInt(lengthMatch);
+            }
+        }
+
+        if (/^(TINY|SMALL|MEDIUM)?INT/i.test(dataType)) {
+            normalizedType = 'integer';
+        } else if (/^BIGINT/i.test(dataType)) {
+            normalizedType = 'bigint';
+        } else if (/^(VARCHAR|CHAR)/i.test(dataType)) {
+            normalizedType = 'string';
+        } else if (/^TEXT|BLOB/i.test(dataType)) {
+            normalizedType = 'text';
+        } else if (/^DATE|TIME/i.test(dataType)) {
+            normalizedType = 'datetime';
+        } else if (/^(BOOL|BOOLEAN)/i.test(dataType)) {
+            normalizedType = 'boolean';
+        } else if (/^(DECIMAL|NUMERIC|FLOAT|DOUBLE)/i.test(dataType)) {
+            normalizedType = 'integer'; // Use integer for numeric types
+        }
+
+        // Check constraints
+        const isPrimaryKey = /PRIMARY\s+KEY/i.test(columnDef);
+        const isNotNull = /NOT\s+NULL/i.test(columnDef);
+        const isUnique = /UNIQUE/i.test(columnDef);
+        const isAutoIncrement = /AUTO_INCREMENT/i.test(columnDef);
+
+        // Extract default value
+        let defaultValue = null;
+        const defaultMatch = columnDef.match(/DEFAULT\s+(?:'([^']*)'|"([^"]*)"|(\S+))/i);
+        if (defaultMatch) {
+            defaultValue = defaultMatch[1] || defaultMatch[2] || defaultMatch[3];
+            if (defaultValue === 'NULL') defaultValue = null;
+        }
+
+        // Extract comment
+        let comment = '';
+        const commentMatch = columnDef.match(/COMMENT\s+['"]([^'"]+)['"]/i);
+        if (commentMatch) {
+            comment = commentMatch[1];
+        }
+
+        return {
+            name: columnName,
+            logicalName: '',
+            dataType: normalizedType,
+            length: length,
+            nullable: !isNotNull && !isPrimaryKey,
+            isPrimaryKey: isPrimaryKey,
+            isIndexed: false,
+            isUnique: isUnique,
+            autoIncrement: isAutoIncrement,
+            defaultValue: defaultValue,
+            comment: comment
+        };
     }
 }
 

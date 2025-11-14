@@ -1417,3 +1417,40 @@ body {
     box-shadow: var(--shadow);
     transform: translateX(4px);
 }
+
+/* DDL Import Styles */
+.ddl-import-info {
+    padding: 1rem;
+    background: linear-gradient(135deg, #e6f2ff 0%, #f0f9ff 100%);
+    border-left: 4px solid var(--info-color);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.ddl-import-info p {
+    margin: 0.5rem 0;
+    color: var(--gray-700);
+    line-height: 1.6;
+}
+
+.ddl-input {
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Courier New', monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+    color: #e2e8f0;
+    border: 2px solid var(--gray-600);
+    padding: 1rem;
+    resize: vertical;
+}
+
+.ddl-input::placeholder {
+    color: var(--gray-500);
+    opacity: 0.7;
+}
+
+.ddl-input:focus {
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+    color: #e2e8f0;
+    border-color: var(--info-color);
+}
