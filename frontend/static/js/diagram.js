@@ -197,25 +197,79 @@ class ERDEditor {
             const result = await response.json();
 
             if (result.success && result.diagrams.length > 0) {
-                const diagramList = result.diagrams
-                    .map((d, i) => `${i + 1}. ${d.name} (${d.table_count} tables)`)
-                    .join('\n');
-
-                const selection = prompt(`불러올 다이어그램 번호를 입력하세요:\n\n${diagramList}`);
-
-                if (selection) {
-                    const index = parseInt(selection) - 1;
-                    if (index >= 0 && index < result.diagrams.length) {
-                        const diagramId = result.diagrams[index].id;
-                        await this.loadDiagramById(diagramId);
-                    }
-                }
+                this.showDiagramListModal(result.diagrams);
             } else {
                 alert('저장된 다이어그램이 없습니다.');
             }
         } catch (error) {
             console.error('Load error:', error);
             alert('불러오기 중 오류가 발생했습니다.');
+        }
+    }
+
+    showDiagramListModal(diagrams) {
+        const container = document.getElementById('diagram-list-container');
+
+        if (!diagrams || diagrams.length === 0) {
+            container.innerHTML = '<div class="empty-state">저장된 다이어그램이 없습니다.</div>';
+            this.showModal('diagram-list-modal');
+            return;
+        }
+
+        container.innerHTML = diagrams.map(diagram => `
+            <div class="diagram-list-item" data-diagram-id="${diagram.id}">
+                <div class="diagram-info">
+                    <div class="diagram-name">${diagram.name}</div>
+                    <div class="diagram-meta">
+                        <span>📊 ${diagram.table_count} 테이블</span>
+                        <span>🔗 ${diagram.relationship_count || 0} 관계</span>
+                        <span>📅 ${new Date(diagram.updated_at).toLocaleDateString('ko-KR')}</span>
+                    </div>
+                </div>
+                <div class="diagram-actions">
+                    <button class="btn btn-sm btn-primary" onclick="app.loadDiagramById('${diagram.id}'); app.hideModal('diagram-list-modal');">불러오기</button>
+                    <button class="btn btn-sm btn-danger" onclick="app.deleteDiagram('${diagram.id}')">삭제</button>
+                </div>
+            </div>
+        `).join('');
+
+        this.showModal('diagram-list-modal');
+    }
+
+    async deleteDiagram(diagramId) {
+        if (!confirm('정말로 이 다이어그램을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/diagrams/${diagramId}`, {
+                method: 'DELETE'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showNotification('다이어그램이 삭제되었습니다.', 'success');
+
+                // If deleted diagram is currently open, create new diagram
+                if (this.currentDiagramId === diagramId) {
+                    this.createNewDiagram();
+                    this.render();
+                }
+
+                // Refresh the diagram list
+                const listResponse = await fetch('/api/diagrams');
+                const listResult = await listResponse.json();
+
+                if (listResult.success) {
+                    this.showDiagramListModal(listResult.diagrams);
+                }
+            } else {
+                this.showNotification('삭제 실패: ' + result.error, 'error');
+            }
+        } catch (error) {
+            console.error('Delete error:', error);
+            this.showNotification('삭제 중 오류가 발생했습니다.', 'error');
         }
     }
 

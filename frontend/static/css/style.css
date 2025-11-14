@@ -1454,3 +1454,75 @@ body {
     color: #e2e8f0;
     border-color: var(--info-color);
 }
+
+/* Diagram List Styles */
+.diagram-list-container {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.diagram-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.diagram-list-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+}
+
+.diagram-list-item:hover::before {
+    transform: scaleY(1);
+}
+
+.diagram-list-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-md);
+    transform: translateX(4px);
+}
+
+.diagram-info {
+    flex: 1;
+}
+
+.diagram-name {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin-bottom: 0.5rem;
+}
+
+.diagram-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+
+.diagram-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.diagram-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
