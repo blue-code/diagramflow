@@ -1028,6 +1028,8 @@ class ERDEditor {
         document.getElementById('btn-zoom-in').addEventListener('click', () => this.zoomIn());
         document.getElementById('btn-zoom-out').addEventListener('click', () => this.zoomOut());
         document.getElementById('btn-zoom-reset').addEventListener('click', () => this.resetZoom());
+        document.getElementById('btn-fit-to-screen').addEventListener('click', () => this.fitToScreen());
+        document.getElementById('btn-auto-layout').addEventListener('click', () => this.autoLayout());
 
         // Help button
         document.getElementById('btn-help').addEventListener('click', () => {
@@ -1220,6 +1222,93 @@ class ERDEditor {
         this.panX = 0;
         this.panY = 0;
         this.render();
+    }
+
+    fitToScreen() {
+        if (this.diagram.tables.length === 0) {
+            this.resetZoom();
+            return;
+        }
+
+        // Calculate bounding box of all tables
+        let minX = Infinity, minY = Infinity;
+        let maxX = -Infinity, maxY = -Infinity;
+
+        this.diagram.tables.forEach(table => {
+            const x = table.position.x;
+            const y = table.position.y;
+            const width = 250; // Approximate table width
+            const height = 80 + table.columns.length * 25; // Approximate table height
+
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x + width);
+            maxY = Math.max(maxY, y + height);
+        });
+
+        // Add padding
+        const padding = 50;
+        minX -= padding;
+        minY -= padding;
+        maxX += padding;
+        maxY += padding;
+
+        // Get canvas dimensions
+        const canvas = document.getElementById('canvas');
+        const canvasWidth = canvas.clientWidth;
+        const canvasHeight = canvas.clientHeight;
+
+        // Calculate required zoom to fit all tables
+        const contentWidth = maxX - minX;
+        const contentHeight = maxY - minY;
+        const zoomX = canvasWidth / contentWidth;
+        const zoomY = canvasHeight / contentHeight;
+        this.zoom = Math.min(zoomX, zoomY, 1.0); // Don't zoom in, only zoom out if needed
+
+        // Center the content
+        this.panX = (canvasWidth - contentWidth * this.zoom) / 2 - minX * this.zoom;
+        this.panY = (canvasHeight - contentHeight * this.zoom) / 2 - minY * this.zoom;
+
+        this.render();
+        this.showNotification('전체 테이블이 화면에 맞춰졌습니다', 'success');
+    }
+
+    autoLayout() {
+        if (this.diagram.tables.length === 0) {
+            this.showNotification('재정렬할 테이블이 없습니다', 'warning');
+            return;
+        }
+
+        this.saveHistory(); // Save before layout change
+
+        // Simple grid layout algorithm
+        const gridCols = Math.ceil(Math.sqrt(this.diagram.tables.length));
+        const cellWidth = 320;
+        const cellHeight = 280;
+        const startX = 50;
+        const startY = 50;
+
+        // Sort tables by name for consistent layout
+        const sortedTables = [...this.diagram.tables].sort((a, b) =>
+            (a.physical_name || '').localeCompare(b.physical_name || '')
+        );
+
+        sortedTables.forEach((table, index) => {
+            const col = index % gridCols;
+            const row = Math.floor(index / gridCols);
+
+            table.position = {
+                x: startX + col * cellWidth,
+                y: startY + row * cellHeight
+            };
+        });
+
+        this.render();
+        this.autoSave();
+        this.showNotification(`${this.diagram.tables.length}개 테이블이 자동 정렬되었습니다`, 'success');
+
+        // Fit to screen after layout
+        setTimeout(() => this.fitToScreen(), 100);
     }
 
     handleWheel(e) {
@@ -2360,17 +2449,16 @@ class ERDEditor {
             try {
                 const column = this.parseColumnDefinition(trimmed);
                 if (column) {
-                    console.log(`Parsed column: ${column.name} (${column.dataType})`);
                     columns.push(column);
                 } else {
-                    console.warn('parseColumnDefinition returned null for:', trimmed);
+                    console.warn('⚠️ parseColumnDefinition returned null for:', trimmed);
                 }
             } catch (error) {
-                console.warn('Failed to parse column:', trimmed, error);
+                console.error('❌ Failed to parse column:', trimmed, error);
             }
         }
 
-        console.log(`Table ${tableName}: parsed ${columns.length} columns`);
+        console.log(`✓ Table ${tableName}: successfully parsed ${columns.length} columns`);
 
 
         // Apply PRIMARY KEY constraints
@@ -2399,43 +2487,79 @@ class ERDEditor {
 
             if (char === '(') {
                 parenDepth++;
+                current += char;
             } else if (char === ')') {
                 parenDepth--;
+                current += char;
             } else if (char === ',' && parenDepth === 0) {
-                lines.push(current.trim());
+                // Found a column separator - add current and reset
+                const trimmed = current.trim();
+                if (trimmed) {
+                    lines.push(trimmed);
+                }
                 current = '';
+                continue; // Skip the comma
+            } else if (char === '\n' || char === '\r') {
+                // Skip newlines, they're just formatting
                 continue;
+            } else {
+                current += char;
             }
-
-            current += char;
         }
 
-        if (current.trim()) {
-            lines.push(current.trim());
+        // Don't forget the last column (may not have trailing comma)
+        const trimmed = current.trim();
+        if (trimmed) {
+            lines.push(trimmed);
         }
 
+        console.log('Split table definition into', lines.length, 'parts');
+        lines.forEach((line, idx) => {
+            console.log(`  Line ${idx}: ${line.substring(0, 80)}${line.length > 80 ? '...' : ''}`);
+        });
         return lines;
     }
 
     parseColumnDefinition(columnDef) {
-        // Remove trailing comma and trim
+        // Remove trailing comma and normalize whitespace
         columnDef = columnDef.replace(/,\s*$/, '').trim();
+        // Normalize tabs and multiple spaces to single space
+        columnDef = columnDef.replace(/[\t]+/g, ' ').replace(/\s+/g, ' ');
 
-        if (!columnDef) return null;
-
-        // Extract column name (handle quoted identifiers properly)
-        // Matches: "COLUMN_NAME" or `COLUMN_NAME` or COLUMN_NAME
-        const nameMatch = columnDef.match(/^(["'`]?\w+["'`]?)/);
-        if (!nameMatch) {
-            console.warn('Could not parse column name from:', columnDef);
+        if (!columnDef) {
+            console.warn('Empty column definition');
             return null;
         }
 
-        const fullNameMatch = nameMatch[0]; // Full match including quotes
-        const columnName = nameMatch[0].replace(/["'`]/g, ''); // Name without quotes
+        console.log('Parsing column definition:', columnDef);
 
-        // Get everything after the column name (including quotes)
-        let afterName = columnDef.substring(fullNameMatch.length).trim();
+        // Extract column name (handle quoted identifiers properly)
+        let columnName;
+        let afterName;
+
+        // Try to match quoted identifier first (more specific)
+        const quotedMatch = columnDef.match(/^["']([^"']+)["']\s+(.*)$/);
+        if (quotedMatch) {
+            columnName = quotedMatch[1];
+            afterName = quotedMatch[2].trim();
+            console.log(`  Matched quoted: name="${columnName}", rest="${afterName}"`);
+        } else {
+            // Try unquoted identifier
+            const unquotedMatch = columnDef.match(/^(\w+)\s+(.*)$/);
+            if (unquotedMatch) {
+                columnName = unquotedMatch[1];
+                afterName = unquotedMatch[2].trim();
+                console.log(`  Matched unquoted: name="${columnName}", rest="${afterName}"`);
+            } else {
+                console.warn('Could not parse column name from:', columnDef);
+                return null;
+            }
+        }
+
+        if (!afterName) {
+            console.warn('No data type found after column name:', columnName);
+            return null;
+        }
 
         // Extract data type - enhanced to support Oracle types (VARCHAR2, NUMBER, etc.)
         const typeMatch = afterName.match(/^(VARCHAR2?|NVARCHAR2?|CHAR|NCHAR|(?:TINY|SMALL|MEDIUM|BIG)?INT(?:EGER)?|NUMBER|DECIMAL|NUMERIC|FLOAT|DOUBLE|REAL|TEXT|CLOB|BLOB|DATE(?:TIME)?|TIMESTAMP|TIME|BOOLEAN|BOOL|JSON|ENUM|SET)(?:\s*\(([^)]+)\))?/i);
@@ -2512,7 +2636,7 @@ class ERDEditor {
             comment = commentMatch[1];
         }
 
-        return {
+        const result = {
             name: columnName,
             logicalName: '',
             dataType: normalizedType,
@@ -2525,6 +2649,9 @@ class ERDEditor {
             defaultValue: defaultValue,
             comment: comment
         };
+
+        console.log(`  ✓ Parsed column: ${columnName} (${normalizedType}${length ? '(' + length + ')' : ''})`);
+        return result;
     }
 }
 

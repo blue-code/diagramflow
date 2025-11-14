@@ -1,0 +1,54 @@
+{
+  "id": "id_1763128945590_2cw9x2qh3",
+  "name": "Untitled Diagram",
+  "description": "",
+  "database_type": "oracle",
+  "version": "1.0.0.1",
+  "tables": [
+    {
+      "id": "id_1763128948535_kqv6ov93k",
+      "physical_name": "table_1",
+      "logical_name": "",
+      "columns": [],
+      "comment": "",
+      "position": {
+        "x": 100.0,
+        "y": 100.0
+      },
+      "categories": []
+    },
+    {
+      "id": "id_1763128961951_xmkv9lrn9",
+      "physical_name": "COLL_DACOS_STATUS",
+      "logical_name": "지그비 위치",
+      "columns": [
+        {
+          "id": "id_1763128961951_8i9v3ld2g",
+          "physical_name": "LINK_ID",
+          "logical_name": "연계ID",
+          "data_type": "string",
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "nullable": true,
+          "primary_key": false,
+          "unique": false,
+          "auto_increment": false,
+          "default_value": null,
+          "comment": "연계ID",
+          "foreign_key": null
+        }
+      ],
+      "comment": "지그비 위치",
+      "position": {
+        "x": 100.0,
+        "y": 150.0
+      },
+      "categories": []
+    }
+  ],
+  "relationships": [],
+  "created_at": "2025-11-14T23:02:36.145781",
+  "updated_at": "2025-11-14T23:02:43.963863",
+  "metadata": {}
+}

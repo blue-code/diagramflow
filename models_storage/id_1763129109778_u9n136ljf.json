@@ -1,0 +1,25 @@
+{
+  "id": "id_1763129109778_u9n136ljf",
+  "name": "Untitled Diagram",
+  "description": "",
+  "database_type": "oracle",
+  "version": "1.0.0.1.0.1.0.1.0.1.0.1",
+  "tables": [
+    {
+      "id": "id_1763129112442_eyxd8t0p3",
+      "physical_name": "table_1",
+      "logical_name": "",
+      "columns": [],
+      "comment": "",
+      "position": {
+        "x": 243.0,
+        "y": 206.0
+      },
+      "categories": []
+    }
+  ],
+  "relationships": [],
+  "created_at": "2025-11-14T23:05:23.898610",
+  "updated_at": "2025-11-14T23:12:28.419760",
+  "metadata": {}
+}

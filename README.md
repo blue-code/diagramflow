@@ -45,6 +45,15 @@
   - Light, Dark, Ocean, Forest, Sunset, Purple
   - Persistent theme selection
   - Keyboard shortcuts (Alt+T)
+- ✅ **Enhanced DDL Import**: Improved Oracle DDL parsing
+  - Full support for VARCHAR2, NUMBER, DATE types
+  - Handles COMMENT ON TABLE/COLUMN statements
+  - Processes complex Oracle storage clauses
+- ✅ **Diagram View Controls**: Enhanced visualization
+  - **Fit to Screen**: Auto-zoom to view all tables (⊡ button)
+  - **Auto Layout**: Intelligent grid-based table arrangement (⚡ button)
+  - Zoom controls (+, -, ⊙)
+  - Pan and zoom with mouse/trackpad
 
 ## Architecture
 
@@ -134,6 +143,31 @@ python backend/app.py
    - Set data type, length, nullable, PK, etc.
 4. **Create Relationships**: (Visual drag connections in UI)
 5. **Save Diagram**: Click "Save" button
+
+### Importing from DDL
+
+1. **Click "DDL Import" button** in the sidebar
+2. **Paste your DDL statements**:
+   - Supports MySQL, PostgreSQL, and Oracle DDL
+   - Can include multiple CREATE TABLE statements
+   - COMMENT ON TABLE/COLUMN statements are automatically parsed
+3. **Click "Import"** to add tables to diagram
+4. **Use View Controls** to organize:
+   - Click **⚡ (Auto Layout)** to automatically arrange tables in a grid
+   - Click **⊡ (Fit to Screen)** to zoom and pan to view all tables
+
+Example Oracle DDL:
+```sql
+CREATE TABLE "USERS" 
+   ("USER_ID" VARCHAR2(20), 
+    "USER_NAME" VARCHAR2(50), 
+    "EMAIL" VARCHAR2(100), 
+    "REG_DATE" DATE);
+
+COMMENT ON TABLE USERS IS '사용자 정보';
+COMMENT ON COLUMN USERS.USER_ID IS '사용자ID';
+COMMENT ON COLUMN USERS.USER_NAME IS '사용자명';
+```
 
 ### Importing from Existing Database
 

@@ -5,6 +5,31 @@ All notable changes to DiagramFlow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2025-01-14
+
+### Fixed
+- **Oracle DDL Import**: Fixed critical parsing bug where only the first column was imported
+  - Improved handling of quoted column identifiers (e.g., "COLUMN_NAME")
+  - Enhanced support for Oracle-specific data types (VARCHAR2, NUMBER, DATE)
+  - Better parsing of complex storage clauses (SEGMENT CREATION, PCTFREE, etc.)
+  - Proper whitespace and tab normalization in DDL text
+
+### Added
+- **Fit to Screen**: New button (⊡) to automatically zoom and pan to view all tables at once
+  - Calculates optimal zoom level to fit all content
+  - Centers the view for better navigation
+  - Shows success notification
+- **Auto Layout**: New button (⚡) to intelligently arrange tables in a grid layout
+  - Grid-based algorithm for consistent spacing
+  - Sorts tables alphabetically for predictable layout
+  - Automatically fits to screen after layout
+  - Saves to history for undo/redo support
+
+### Improved
+- DDL Import parsing now includes extensive logging for debugging
+- Enhanced column definition regex to handle various quote styles
+- Better error messages when DDL parsing fails
+
 ## [0.3.0] - 2025-01-11
 
 ### Added - Phase 3 Release 🚀

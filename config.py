@@ -6,7 +6,7 @@ import os
 
 # Application settings
 APP_NAME = "DiagramFlow"
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 DESCRIPTION = "Modern collaborative ERD tool with real-time editing"
 
 # Flask settings

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>DDL Parser Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            font-family: monospace;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #output {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-size: 14px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Oracle DDL Parser Test</h1>
+
+    <div class="test-section">
+        <h2>Input DDL</h2>
+        <textarea id="ddlInput">CREATE TABLE "COLL_DACOS_STATUS"
+   (	"LINK_ID" VARCHAR2(8),
+	"SEND_DT" VARCHAR2(14),
+	"COMPANY_ID" VARCHAR2(5),
+	"MEMBER_NM" VARCHAR2(30),
+	"USER_ID" VARCHAR2(20),
+	"WORK_ID" VARCHAR2(5),
+	"WORK_RESULT_ID" VARCHAR2(5),
+	"SERVICE_ID" VARCHAR2(50),
+	"PROC_ST" VARCHAR2(5),
+	"PROC_TX" VARCHAR2(50),
+	"REG_DATE" DATE,
+	"EULBU_NO" VARCHAR2(20)
+   ) SEGMENT CREATION IMMEDIATE
+  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 NOCOMPRESS LOGGING
+  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1 BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "SYSTEM" ;
+
+COMMENT ON TABLE AUTO.COLL_DACOS_STATUS IS '지그비 위치';
+COMMENT ON COLUMN AUTO.COLL_DACOS_STATUS.LINK_ID IS '연계ID';
+COMMENT ON COLUMN AUTO.COLL_DACOS_STATUS.SEND_DT IS '송/수신일자';
+COMMENT ON COLUMN AUTO.COLL_DACOS_STATUS.COMPANY_ID IS '회사ID';
+COMMENT ON COLUMN AUTO.COLL_DACOS_STATUS.MEMBER_NM IS '담당자명';
+COMMENT ON COLUMN AUTO.COLL_DACOS_STATUS.USER_ID IS '회원ID';
+COMMENT ON COLUMN AUTO.COLL_DACOS_STATUS.WORK_ID IS '업무ID';
+COMMENT ON COLUMN AUTO.COLL_DACOS_STATUS.WORK_RESULT_ID IS '결과업무ID';
+COMMENT ON COLUMN AUTO.COLL_DACOS_STATUS.SERVICE_ID IS '전송번호';
+COMMENT ON COLUMN AUTO.COLL_DACOS_STATUS.PROC_ST IS '처리상태코드';
+COMMENT ON COLUMN AUTO.COLL_DACOS_STATUS.PROC_TX IS '처리상태메시지';
+COMMENT ON COLUMN AUTO.COLL_DACOS_STATUS.REG_DATE IS '등록일시';
+COMMENT ON COLUMN AUTO.COLL_DACOS_STATUS.EULBU_NO IS '근저당 을부번호';</textarea>
+
+        <button onclick="testParse()">Parse DDL</button>
+        <button onclick="testSplitOnly()">Test Split Only</button>
+        <button onclick="clearOutput()">Clear Output</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Output</h2>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        function log(msg, type = 'info') {
+            const output = document.getElementById('output');
+            const span = document.createElement('div');
+            span.className = type;
+            span.textContent = msg;
+            output.appendChild(span);
+        }
+
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
+        }
+
+        function splitTableDefinition(tableBody) {
+            const lines = [];
+            let current = '';
+            let parenDepth = 0;
+
+            for (let i = 0; i < tableBody.length; i++) {
+                const char = tableBody[i];
+
+                if (char === '(') {
+                    parenDepth++;
+                    current += char;
+                } else if (char === ')') {
+                    parenDepth--;
+                    current += char;
+                } else if (char === ',' && parenDepth === 0) {
+                    // Found a column separator
+                    const trimmed = current.trim();
+                    if (trimmed) {
+                        lines.push(trimmed);
+                    }
+                    current = '';
+                    continue;
+                } else if (char === '\n' || char === '\r') {
+                    // Skip newlines
+                    continue;
+                } else {
+                    current += char;
+                }
+            }
+
+            // Last column
+            const trimmed = current.trim();
+            if (trimmed) {
+                lines.push(trimmed);
+            }
+
+            return lines;
+        }
+
+        function parseColumnDefinition(columnDef) {
+            columnDef = columnDef.replace(/,\s*$/, '').trim();
+            columnDef = columnDef.replace(/[\t]+/g, ' ').replace(/\s+/g, ' ');
+
+            if (!columnDef) {
+                return null;
+            }
+
+            let columnName, afterName;
+
+            const quotedMatch = columnDef.match(/^["']([^"']+)["']\s+(.*)$/);
+            if (quotedMatch) {
+                columnName = quotedMatch[1];
+                afterName = quotedMatch[2].trim();
+            } else {
+                const unquotedMatch = columnDef.match(/^(\w+)\s+(.*)$/);
+                if (unquotedMatch) {
+                    columnName = unquotedMatch[1];
+                    afterName = unquotedMatch[2].trim();
+                } else {
+                    return null;
+                }
+            }
+
+            if (!afterName) {
+                return null;
+            }
+
+            const typeMatch = afterName.match(/^(VARCHAR2?|NVARCHAR2?|CHAR|NCHAR|(?:TINY|SMALL|MEDIUM|BIG)?INT(?:EGER)?|NUMBER|DECIMAL|NUMERIC|FLOAT|DOUBLE|REAL|TEXT|CLOB|BLOB|DATE(?:TIME)?|TIMESTAMP|TIME|BOOLEAN|BOOL|JSON|ENUM|SET)(?:\s*\(([^)]+)\))?/i);
+
+            if (!typeMatch) {
+                return null;
+            }
+
+            let dataType = typeMatch[1].toUpperCase();
+            const lengthMatch = typeMatch[2];
+
+            return {
+                name: columnName,
+                dataType: dataType,
+                length: lengthMatch ? parseInt(lengthMatch) : null
+            };
+        }
+
+        function testSplitOnly() {
+            clearOutput();
+            const ddl = document.getElementById('ddlInput').value;
+
+            const createTableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:\w+\.)?["`]?(\w+)["`]?\s*\(([\s\S]*?)\)[\s\S]*?;/gi;
+            const match = createTableRegex.exec(ddl);
+
+            if (!match) {
+                log('❌ No CREATE TABLE found', 'error');
+                return;
+            }
+
+            const tableName = match[1];
+            const tableBody = match[2];
+
+            log(`📊 Table: ${tableName}`, 'success');
+            log(`\n📝 Table Body (${tableBody.length} chars):`);
+            log(tableBody.substring(0, 200) + '...\n');
+
+            const lines = splitTableDefinition(tableBody);
+            log(`\n✓ Split into ${lines.length} parts:\n`, 'success');
+
+            lines.forEach((line, idx) => {
+                log(`  ${idx + 1}. ${line}`);
+            });
+        }
+
+        function testParse() {
+            clearOutput();
+            const ddl = document.getElementById('ddlInput').value;
+
+            const createTableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:\w+\.)?["`]?(\w+)["`]?\s*\(([\s\S]*?)\)[\s\S]*?;/gi;
+            const match = createTableRegex.exec(ddl);
+
+            if (!match) {
+                log('❌ No CREATE TABLE found', 'error');
+                return;
+            }
+
+            const tableName = match[1];
+            const tableBody = match[2];
+
+            log(`📊 Table: ${tableName}`, 'success');
+
+            const lines = splitTableDefinition(tableBody);
+            log(`\n✓ Split into ${lines.length} lines\n`, 'success');
+
+            const columns = [];
+
+            lines.forEach((line, idx) => {
+                const trimmed = line.trim();
+
+                if (!trimmed) return;
+
+                if (/^PRIMARY\s+KEY/i.test(trimmed)) {
+                    log(`  ${idx + 1}. [CONSTRAINT] ${trimmed.substring(0, 50)}...`, 'warning');
+                    return;
+                }
+
+                if (/^(KEY|INDEX|UNIQUE|CONSTRAINT|FOREIGN)/i.test(trimmed)) {
+                    log(`  ${idx + 1}. [SKIP] ${trimmed.substring(0, 50)}...`, 'warning');
+                    return;
+                }
+
+                const column = parseColumnDefinition(trimmed);
+                if (column) {
+                    columns.push(column);
+                    log(`  ${idx + 1}. ✓ ${column.name} - ${column.dataType}${column.length ? '(' + column.length + ')' : ''}`, 'success');
+                } else {
+                    log(`  ${idx + 1}. ❌ Failed to parse: ${trimmed.substring(0, 80)}`, 'error');
+                }
+            });
+
+            log(`\n\n🎉 Result: ${columns.length} columns parsed successfully!`, 'success');
+
+            if (columns.length === 12) {
+                log('✅ All 12 columns parsed correctly!', 'success');
+            } else {
+                log(`⚠️ Expected 12 columns, got ${columns.length}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
+

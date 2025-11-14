@@ -1,0 +1,25 @@
+{
+  "id": "id_1763128819720_lguzrip1f",
+  "name": "Untitled Diagram",
+  "description": "",
+  "database_type": "mysql",
+  "version": "1.0",
+  "tables": [
+    {
+      "id": "id_1763128822592_qyzbjebl8",
+      "physical_name": "table_1",
+      "logical_name": "",
+      "columns": [],
+      "comment": "",
+      "position": {
+        "x": 100.0,
+        "y": 100.0
+      },
+      "categories": []
+    }
+  ],
+  "relationships": [],
+  "created_at": "2025-11-14T23:00:27.314428",
+  "updated_at": "2025-11-14T23:00:27.315145",
+  "metadata": {}
+}
