@@ -2328,6 +2328,8 @@ class ERDEditor {
         // Split by comma, but not within parentheses
         const lines = this.splitTableDefinition(tableBody);
 
+        console.log(`Parsing table ${tableName}, found ${lines.length} lines`);
+
         for (const line of lines) {
             const trimmed = line.trim();
 
@@ -2358,12 +2360,18 @@ class ERDEditor {
             try {
                 const column = this.parseColumnDefinition(trimmed);
                 if (column) {
+                    console.log(`Parsed column: ${column.name} (${column.dataType})`);
                     columns.push(column);
+                } else {
+                    console.warn('parseColumnDefinition returned null for:', trimmed);
                 }
             } catch (error) {
                 console.warn('Failed to parse column:', trimmed, error);
             }
         }
+
+        console.log(`Table ${tableName}: parsed ${columns.length} columns`);
+
 
         // Apply PRIMARY KEY constraints
         primaryKeys.forEach(pkCol => {
@@ -2410,19 +2418,32 @@ class ERDEditor {
     }
 
     parseColumnDefinition(columnDef) {
-        // Remove trailing comma
-        columnDef = columnDef.replace(/,\s*$/, '');
+        // Remove trailing comma and trim
+        columnDef = columnDef.replace(/,\s*$/, '').trim();
 
-        // Extract column name (first word, possibly quoted)
-        const nameMatch = columnDef.match(/^([`"]?\w+[`"]?)/);
-        if (!nameMatch) return null;
+        if (!columnDef) return null;
 
-        const columnName = nameMatch[1].replace(/[`"]/g, '');
+        // Extract column name (handle quoted identifiers properly)
+        // Matches: "COLUMN_NAME" or `COLUMN_NAME` or COLUMN_NAME
+        const nameMatch = columnDef.match(/^(["'`]?\w+["'`]?)/);
+        if (!nameMatch) {
+            console.warn('Could not parse column name from:', columnDef);
+            return null;
+        }
+
+        const fullNameMatch = nameMatch[0]; // Full match including quotes
+        const columnName = nameMatch[0].replace(/["'`]/g, ''); // Name without quotes
+
+        // Get everything after the column name (including quotes)
+        let afterName = columnDef.substring(fullNameMatch.length).trim();
 
         // Extract data type - enhanced to support Oracle types (VARCHAR2, NUMBER, etc.)
-        const typeMatch = columnDef.match(/^\S+\s+(VARCHAR2?|NVARCHAR2?|CHAR|NCHAR|(?:TINY|SMALL|MEDIUM|BIG)?INT(?:EGER)?|NUMBER|DECIMAL|NUMERIC|FLOAT|DOUBLE|REAL|TEXT|CLOB|BLOB|DATE(?:TIME)?|TIMESTAMP|TIME|BOOLEAN|BOOL|JSON|ENUM|SET)(?:\s*\(([^)]+)\))?/i);
+        const typeMatch = afterName.match(/^(VARCHAR2?|NVARCHAR2?|CHAR|NCHAR|(?:TINY|SMALL|MEDIUM|BIG)?INT(?:EGER)?|NUMBER|DECIMAL|NUMERIC|FLOAT|DOUBLE|REAL|TEXT|CLOB|BLOB|DATE(?:TIME)?|TIMESTAMP|TIME|BOOLEAN|BOOL|JSON|ENUM|SET)(?:\s*\(([^)]+)\))?/i);
 
-        if (!typeMatch) return null;
+        if (!typeMatch) {
+            console.warn('Could not parse data type from:', afterName, 'in column:', columnDef);
+            return null;
+        }
 
         let dataType = typeMatch[1].toUpperCase();
         const lengthMatch = typeMatch[2];
@@ -2470,7 +2491,7 @@ class ERDEditor {
             }
         }
 
-        // Check constraints
+        // Check constraints (look in the full column definition)
         const isPrimaryKey = /PRIMARY\s+KEY/i.test(columnDef);
         const isNotNull = /NOT\s+NULL/i.test(columnDef);
         const isUnique = /UNIQUE/i.test(columnDef);
