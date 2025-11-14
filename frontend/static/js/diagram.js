@@ -27,6 +27,9 @@ class ERDEditor {
         this.isPanning = false;
         this.panStart = { x: 0, y: 0 };
 
+        // View mode: 'both', 'physical', 'logical'
+        this.viewMode = 'both';
+
         this.init();
     }
 
@@ -699,7 +702,21 @@ class ERDEditor {
         title.setAttribute('x', table.position.x + width / 2);
         title.setAttribute('y', table.position.y + 20);
         title.setAttribute('text-anchor', 'middle');
-        title.textContent = table.logical_name || table.physical_name;
+
+        // Display based on view mode
+        let titleText = '';
+        if (this.viewMode === 'physical') {
+            titleText = table.physical_name;
+        } else if (this.viewMode === 'logical') {
+            titleText = table.logical_name || table.physical_name;
+        } else { // 'both'
+            if (table.logical_name) {
+                titleText = `${table.logical_name} (${table.physical_name})`;
+            } else {
+                titleText = table.physical_name;
+            }
+        }
+        title.textContent = titleText;
         g.appendChild(title);
 
         // Table body
@@ -732,7 +749,19 @@ class ERDEditor {
                 icon = '🔗 ';    // Foreign Key
             }
 
-            const colName = column.logical_name || column.physical_name;
+            // Display column name based on view mode
+            let colName = '';
+            if (this.viewMode === 'physical') {
+                colName = column.physical_name;
+            } else if (this.viewMode === 'logical') {
+                colName = column.logical_name || column.physical_name;
+            } else { // 'both'
+                if (column.logical_name) {
+                    colName = `${column.logical_name} (${column.physical_name})`;
+                } else {
+                    colName = column.physical_name;
+                }
+            }
 
             // Format data type with length
             let dataType = column.data_type.toUpperCase();
@@ -956,6 +985,12 @@ class ERDEditor {
 
         document.getElementById('diagram-db-type').addEventListener('change', () => {
             this.autoSave();
+        });
+
+        // View mode change
+        document.getElementById('view-mode').addEventListener('change', (e) => {
+            this.viewMode = e.target.value;
+            this.render();
         });
 
         // Table search/filter
