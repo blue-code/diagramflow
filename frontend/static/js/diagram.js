@@ -38,15 +38,33 @@ class ERDEditor {
     }
 
     async init() {
-        this.createNewDiagram();
-        this.bindEvents();
-        this.updateDictionaryCount();
-
-        // Check URL for diagram ID and load if present
+        // Check URL for diagram ID BEFORE creating new diagram
         const diagramId = this.getDiagramIdFromURL();
+
         if (diagramId) {
+            // URL has a diagram ID - create blank diagram first (without clearing URL)
+            this.diagram = {
+                id: this.generateId(),
+                name: 'Untitled Diagram',
+                description: '',
+                database_type: 'mysql',
+                version: '1.0',
+                tables: [],
+                relationships: [],
+                metadata: {}
+            };
+            this.currentDiagramId = null;
+
+            this.bindEvents();
+            this.updateDictionaryCount();
+
+            // Load the diagram from URL
             await this.loadDiagramById(diagramId);
         } else {
+            // No URL parameter - create new diagram normally
+            this.createNewDiagram();
+            this.bindEvents();
+            this.updateDictionaryCount();
             this.render();
         }
     }
