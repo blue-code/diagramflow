@@ -37,11 +37,82 @@ class ERDEditor {
         this.init();
     }
 
-    init() {
+    async init() {
         this.createNewDiagram();
         this.bindEvents();
-        this.render();
         this.updateDictionaryCount();
+
+        // Check URL for diagram ID and load if present
+        const diagramId = this.getDiagramIdFromURL();
+        if (diagramId) {
+            await this.loadDiagramById(diagramId);
+        } else {
+            this.render();
+        }
+    }
+
+    getDiagramIdFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('diagram') || urlParams.get('id');
+    }
+
+    updateURL(diagramId) {
+        if (!diagramId) {
+            // Remove diagram parameter from URL
+            const url = new URL(window.location);
+            url.searchParams.delete('diagram');
+            url.searchParams.delete('id');
+            window.history.pushState({}, '', url);
+            return;
+        }
+
+        // Add/update diagram parameter in URL
+        const url = new URL(window.location);
+        url.searchParams.set('diagram', diagramId);
+        window.history.pushState({ diagramId }, '', url);
+    }
+
+    getShareableURL() {
+        if (!this.currentDiagramId) {
+            return window.location.origin + window.location.pathname;
+        }
+
+        const url = new URL(window.location);
+        url.searchParams.set('diagram', this.currentDiagramId);
+        return url.toString();
+    }
+
+    async copyShareableURL() {
+        if (!this.currentDiagramId) {
+            alert('먼저 다이어그램을 저장해주세요.\n저장된 다이어그램만 공유할 수 있습니다.');
+            return;
+        }
+
+        const url = this.getShareableURL();
+
+        try {
+            await navigator.clipboard.writeText(url);
+            this.showNotification('URL이 클립보드에 복사되었습니다!', 'success');
+        } catch (error) {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = url;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                document.execCommand('copy');
+                this.showNotification('URL이 클립보드에 복사되었습니다!', 'success');
+            } catch (err) {
+                console.error('Failed to copy URL:', err);
+                prompt('다음 URL을 복사하세요:', url);
+            }
+
+            document.body.removeChild(textArea);
+        }
     }
 
     // ==================== Diagram Management ====================
@@ -58,6 +129,8 @@ class ERDEditor {
             metadata: {}
         };
         this.currentDiagramId = null;
+        // Clear URL parameters for new diagram
+        this.updateURL(null);
         document.getElementById('diagram-name').value = this.diagram.name;
         document.getElementById('diagram-db-type').value = this.diagram.database_type;
     }
@@ -124,6 +197,9 @@ class ERDEditor {
 
                 // Clear any saved draft since save succeeded
                 this.clearDraft();
+
+                // Update URL with diagram ID
+                this.updateURL(this.currentDiagramId);
 
                 this.setSaveStatus('saved', '저장됨');
                 // Auto-hide success status after 3 seconds
@@ -295,9 +371,16 @@ class ERDEditor {
                     document.getElementById('diagram-db-type').value = this.diagram.database_type;
                     this.render();
                 }
+
+                // Update URL with diagram ID
+                this.updateURL(diagramId);
+                this.showNotification(`"${this.diagram.name}" 다이어그램을 불러왔습니다.`, 'success');
+            } else {
+                this.showNotification('다이어그램을 불러올 수 없습니다.', 'error');
             }
         } catch (error) {
             console.error('Load diagram error:', error);
+            this.showNotification('다이어그램 로드 중 오류가 발생했습니다.', 'error');
         }
     }
 
@@ -1015,6 +1098,7 @@ class ERDEditor {
         document.getElementById('btn-load').addEventListener('click', () => this.loadDiagram());
         document.getElementById('btn-export-ddl').addEventListener('click', () => this.exportDDL());
         document.getElementById('btn-export-image').addEventListener('click', () => this.exportToImage());
+        document.getElementById('btn-copy-url').addEventListener('click', () => this.copyShareableURL());
         document.getElementById('btn-add-table').addEventListener('click', () => this.addTable());
         document.getElementById('btn-import-ddl').addEventListener('click', () => this.showDDLImport());
         document.getElementById('btn-execute-import').addEventListener('click', () => this.executeImport());
@@ -2492,15 +2576,20 @@ class ERDEditor {
                 parenDepth--;
                 current += char;
             } else if (char === ',' && parenDepth === 0) {
-                // Found a column separator - add current and reset
+                // Found a column separator at top level
                 const trimmed = current.trim();
                 if (trimmed) {
+                    console.log(`  Found column part: "${trimmed.substring(0, 50)}..."`);
                     lines.push(trimmed);
                 }
                 current = '';
-                continue; // Skip the comma
-            } else if (char === '\n' || char === '\r') {
-                // Skip newlines, they're just formatting
+                continue; // Skip the comma itself
+            } else if (char === '\n' || char === '\r' || char === '\t') {
+                // Skip whitespace characters - they're just formatting
+                // But add a space if current has content to preserve word boundaries
+                if (current.length > 0 && current[current.length - 1] !== ' ') {
+                    current += ' ';
+                }
                 continue;
             } else {
                 current += char;
@@ -2510,13 +2599,11 @@ class ERDEditor {
         // Don't forget the last column (may not have trailing comma)
         const trimmed = current.trim();
         if (trimmed) {
+            console.log(`  Found last column part: "${trimmed.substring(0, 50)}..."`);
             lines.push(trimmed);
         }
 
-        console.log('Split table definition into', lines.length, 'parts');
-        lines.forEach((line, idx) => {
-            console.log(`  Line ${idx}: ${line.substring(0, 80)}${line.length > 80 ? '...' : ''}`);
-        });
+        console.log(`Split table definition into ${lines.length} parts`);
         return lines;
     }
 
@@ -2527,37 +2614,40 @@ class ERDEditor {
         columnDef = columnDef.replace(/[\t]+/g, ' ').replace(/\s+/g, ' ');
 
         if (!columnDef) {
-            console.warn('Empty column definition');
+            console.warn('⚠️ Empty column definition');
             return null;
         }
 
-        console.log('Parsing column definition:', columnDef);
+        console.log(`📝 Parsing: "${columnDef}"`);
 
         // Extract column name (handle quoted identifiers properly)
         let columnName;
         let afterName;
 
         // Try to match quoted identifier first (more specific)
-        const quotedMatch = columnDef.match(/^["']([^"']+)["']\s+(.*)$/);
+        // Match: "NAME" TYPE or 'NAME' TYPE
+        const quotedMatch = columnDef.match(/^["']([^"']+)["']\s+(.+)$/);
         if (quotedMatch) {
             columnName = quotedMatch[1];
             afterName = quotedMatch[2].trim();
-            console.log(`  Matched quoted: name="${columnName}", rest="${afterName}"`);
+            console.log(`  ✓ Matched quoted identifier: "${columnName}"`);
+            console.log(`  ✓ Rest: "${afterName}"`);
         } else {
             // Try unquoted identifier
-            const unquotedMatch = columnDef.match(/^(\w+)\s+(.*)$/);
+            const unquotedMatch = columnDef.match(/^(\w+)\s+(.+)$/);
             if (unquotedMatch) {
                 columnName = unquotedMatch[1];
                 afterName = unquotedMatch[2].trim();
-                console.log(`  Matched unquoted: name="${columnName}", rest="${afterName}"`);
+                console.log(`  ✓ Matched unquoted identifier: "${columnName}"`);
+                console.log(`  ✓ Rest: "${afterName}"`);
             } else {
-                console.warn('Could not parse column name from:', columnDef);
+                console.error(`  ❌ Could not parse column name from: "${columnDef}"`);
                 return null;
             }
         }
 
         if (!afterName) {
-            console.warn('No data type found after column name:', columnName);
+            console.error(`  ❌ No data type found after column name: "${columnName}"`);
             return null;
         }
 
@@ -2565,9 +2655,12 @@ class ERDEditor {
         const typeMatch = afterName.match(/^(VARCHAR2?|NVARCHAR2?|CHAR|NCHAR|(?:TINY|SMALL|MEDIUM|BIG)?INT(?:EGER)?|NUMBER|DECIMAL|NUMERIC|FLOAT|DOUBLE|REAL|TEXT|CLOB|BLOB|DATE(?:TIME)?|TIMESTAMP|TIME|BOOLEAN|BOOL|JSON|ENUM|SET)(?:\s*\(([^)]+)\))?/i);
 
         if (!typeMatch) {
-            console.warn('Could not parse data type from:', afterName, 'in column:', columnDef);
+            console.error(`  ❌ Could not parse data type from: "${afterName}"`);
+            console.error(`  ❌ Full column def was: "${columnDef}"`);
             return null;
         }
+
+        console.log(`  ✓ Data type match: ${typeMatch[1]}${typeMatch[2] ? '(' + typeMatch[2] + ')' : ''}`);
 
         let dataType = typeMatch[1].toUpperCase();
         const lengthMatch = typeMatch[2];
@@ -2650,7 +2743,7 @@ class ERDEditor {
             comment: comment
         };
 
-        console.log(`  ✓ Parsed column: ${columnName} (${normalizedType}${length ? '(' + length + ')' : ''})`);
+        console.log(`  ✅ SUCCESS: ${columnName} → ${normalizedType}${length ? '(' + length + ')' : ''}`);
         return result;
     }
 }
