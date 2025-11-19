@@ -1,0 +1,318 @@
+{
+  "app": {
+    "title": "DiagramFlow",
+    "version": "v0.3.0"
+  },
+  "header": {
+    "saveStatus": {
+      "saved": "저장됨",
+      "saving": "저장 중...",
+      "unsaved": "저장 안됨"
+    },
+    "buttons": {
+      "undo": "실행 취소",
+      "redo": "다시 실행",
+      "help": "도움말",
+      "copyUrl": "URL 복사",
+      "exportImage": "이미지 내보내기",
+      "newDiagram": "새 다이어그램",
+      "load": "불러오기",
+      "exportDdl": "DDL 내보내기"
+    },
+    "tooltips": {
+      "undo": "실행 취소 (Ctrl+Z)",
+      "redo": "다시 실행 (Ctrl+Y)",
+      "help": "사용 가이드",
+      "copyUrl": "다이어그램 URL 복사",
+      "exportImage": "PNG 이미지로 내보내기",
+      "newDiagram": "새로운 다이어그램 시작",
+      "load": "저장된 다이어그램 불러오기",
+      "exportDdl": "SQL DDL 코드 내보내기"
+    }
+  },
+  "sidebar": {
+    "diagramInfo": {
+      "title": "다이어그램 정보",
+      "name": "이름:",
+      "namePlaceholder": "Untitled Diagram",
+      "database": "데이터베이스:",
+      "viewMode": "보기 모드:",
+      "viewModes": {
+        "both": "물리명 + 논리명",
+        "physical": "물리명만",
+        "logical": "논리명만"
+      }
+    },
+    "addTable": {
+      "title": "테이블 추가",
+      "button": "📊 + 테이블 추가",
+      "buttonTooltip": "새로운 테이블을 다이어그램에 추가합니다",
+      "importDdl": "📥 DDL Import",
+      "importDdlTooltip": "DDL 문을 import하여 테이블을 추가합니다"
+    },
+    "addRelationship": {
+      "title": "관계 추가",
+      "button": "🔗 + 관계 추가",
+      "buttonTooltip": "테이블 간의 관계(외래키)를 설정합니다"
+    },
+    "tableList": {
+      "title": "테이블 목록",
+      "searchPlaceholder": "🔍 테이블 검색...",
+      "emptyState": "테이블이 없습니다"
+    },
+    "dictionary": {
+      "title": "컬럼 사전",
+      "manageButton": "📖 사전 관리",
+      "manageTooltip": "컬럼 사전 관리",
+      "summary": "등록된 표준 컬럼: <strong id=\"dict-count\">0</strong>개"
+    },
+    "statistics": {
+      "title": "통계",
+      "tables": "테이블:",
+      "relationships": "관계:",
+      "columns": "컬럼:"
+    }
+  },
+  "canvas": {
+    "zoom": {
+      "zoomIn": "확대 (Zoom In)",
+      "zoomOut": "축소 (Zoom Out)",
+      "reset": "초기화 (Reset)",
+      "fitToScreen": "전체 보기 (Fit to Screen)",
+      "autoLayout": "자동 재정렬 (Auto Layout)"
+    },
+    "contextMenu": {
+      "edit": "편집",
+      "delete": "삭제"
+    },
+    "emptyState": {
+      "title": "🎯 ERD 다이어그램 시작하기",
+      "subtitle": "데이터베이스 설계를 시각화하고 관리하세요",
+      "steps": {
+        "step1": {
+          "title": "📊 테이블 추가",
+          "description": "왼쪽 사이드바의 \"테이블 추가\" 버튼을 클릭하세요"
+        },
+        "step2": {
+          "title": "✏️ 컬럼 정의",
+          "description": "테이블 이름과 컬럼을 추가하고 PK/FK를 설정하세요"
+        },
+        "step3": {
+          "title": "🔗 관계 설정",
+          "description": "테이블 간의 관계를 연결하여 ERD를 완성하세요"
+        },
+        "step4": {
+          "title": "💾 자동 저장",
+          "description": "모든 변경사항이 자동으로 저장됩니다"
+        }
+      },
+      "startButton": "시작하기",
+      "loadSampleButton": "샘플 다이어그램 불러오기"
+    }
+  },
+  "modal": {
+    "table": {
+      "title": "테이블 편집",
+      "physicalName": "물리명 (Physical Name):",
+      "physicalNamePlaceholder": "tb_users",
+      "logicalName": "논리명 (Logical Name):",
+      "logicalNamePlaceholder": "사용자",
+      "comment": "설명:",
+      "commentPlaceholder": "테이블 설명",
+      "category": "카테고리 (선택사항):",
+      "categoryPlaceholder": "예: 회원관리, 주문, 결제 등",
+      "columnsTitle": "컬럼",
+      "addColumn": "+ 컬럼 추가",
+      "addFromDict": "📖 사전에서 추가",
+      "save": "저장",
+      "cancel": "취소"
+    },
+    "ddl": {
+      "title": "DDL 내보내기",
+      "copyButton": "클립보드에 복사",
+      "close": "닫기"
+    },
+    "relationship": {
+      "title": "관계 추가",
+      "name": "관계 이름 (선택사항):",
+      "namePlaceholder": "fk_users_orders",
+      "sourceTable": "소스 테이블 (부모, PK):",
+      "sourceTablePlaceholder": "-- 테이블 선택 --",
+      "sourceColumns": "소스 컬럼 (PK):",
+      "sourceColumnsHelp": "Ctrl/Cmd 키를 누른 채로 여러 컬럼 선택 가능",
+      "targetTable": "대상 테이블 (자식, FK):",
+      "targetTablePlaceholder": "-- 테이블 선택 --",
+      "targetColumns": "대상 컬럼 (FK):",
+      "targetColumnsHelp": "Ctrl/Cmd 키를 누른 채로 여러 컬럼 선택 가능",
+      "cardinality": "카디널리티 (Cardinality):",
+      "cardinalityOptions": {
+        "oneToMany": "1:N (One to Many)",
+        "oneToOne": "1:1 (One to One)",
+        "manyToMany": "N:N (Many to Many)"
+      },
+      "onDelete": "ON DELETE:",
+      "onDeleteOptions": {
+        "cascade": "CASCADE - 부모 삭제시 자식도 삭제",
+        "setNull": "SET NULL - 부모 삭제시 자식 NULL",
+        "restrict": "RESTRICT - 자식 있으면 삭제 불가",
+        "noAction": "NO ACTION - 아무 동작 안함"
+      },
+      "onUpdate": "ON UPDATE:",
+      "onUpdateOptions": {
+        "cascade": "CASCADE - 부모 변경시 자식도 변경",
+        "setNull": "SET NULL - 부모 변경시 자식 NULL",
+        "restrict": "RESTRICT - 자식 있으면 변경 불가",
+        "noAction": "NO ACTION - 아무 동작 안함"
+      },
+      "comment": "설명:",
+      "commentPlaceholder": "관계 설명",
+      "save": "저장",
+      "cancel": "취소"
+    },
+    "merge": {
+      "title": "⚠️ 버전 충돌 해결",
+      "message1": "다른 사용자가 다이어그램을 수정했습니다.",
+      "message2": "작업하던 내용이 임시 저장되었습니다. 어떻게 처리하시겠습니까?",
+      "useDraft": "내 작업 내용 사용",
+      "useServer": "서버 버전 사용",
+      "merge": "🔀 병합 시도 (내 테이블 + 서버 관계)",
+      "help": {
+        "title": "도움말:",
+        "useDraft": "• <strong>내 작업 내용 사용</strong>: 작업하던 변경사항을 모두 유지합니다",
+        "useServer": "• <strong>서버 버전 사용</strong>: 다른 사용자의 변경사항을 적용하고 내 작업을 포기합니다",
+        "merge": "• <strong>병합 시도</strong>: 두 버전을 자동으로 합칩니다 (수동 확인 필요)"
+      }
+    },
+    "dictionary": {
+      "title": "📖 컬럼 사전 관리",
+      "info": "자주 사용하는 컬럼을 사전에 등록하여 일관성 있는 데이터베이스 설계를 할 수 있습니다.",
+      "addButton": "+ 표준 컬럼 추가",
+      "close": "닫기"
+    },
+    "dictSelect": {
+      "title": "📖 사전에서 컬럼 선택",
+      "searchPlaceholder": "🔍 컬럼 검색...",
+      "cancel": "취소"
+    },
+    "dictEntry": {
+      "title": "표준 컬럼 추가",
+      "physicalName": "물리명 (Physical Name):",
+      "physicalNamePlaceholder": "user_id",
+      "logicalName": "논리명 (Logical Name):",
+      "logicalNamePlaceholder": "사용자ID",
+      "dataType": "데이터 타입:",
+      "length": "길이:",
+      "lengthPlaceholder": "255",
+      "notNull": "Not Null",
+      "description": "설명:",
+      "descriptionPlaceholder": "이 컬럼에 대한 설명",
+      "save": "저장",
+      "cancel": "취소"
+    },
+    "diagramList": {
+      "title": "📂 저장된 다이어그램",
+      "close": "닫기"
+    },
+    "ddlImport": {
+      "title": "📥 DDL Import",
+      "info1": "CREATE TABLE 문을 붙여넣으면 자동으로 파싱하여 테이블을 추가합니다.",
+      "info2": "💡 여러 개의 CREATE TABLE 문을 한 번에 붙여넣을 수 있습니다.",
+      "label": "DDL 문:",
+      "import": "Import",
+      "cancel": "취소"
+    },
+    "help": {
+      "title": "📖 사용 가이드",
+      "intro": {
+        "title": "🎯 DiagramFlow란?",
+        "description": "DiagramFlow는 데이터베이스 ERD(Entity Relationship Diagram)를 쉽고 빠르게 만들 수 있는 협업 도구입니다."
+      },
+      "quickStart": {
+        "title": "🚀 빠른 시작",
+        "step1": "<strong>테이블 추가:</strong> 왼쪽 사이드바의 \"📊 + 테이블 추가\" 버튼 클릭",
+        "step2": "<strong>테이블 편집:</strong> 추가된 테이블을 클릭하거나 우클릭하여 편집",
+        "step3": "<strong>컬럼 추가:</strong> 테이블 편집 화면에서 \"컬럼 추가\" 버튼 클릭",
+        "step4": "<strong>PK 설정:</strong> 컬럼 행의 \"🔑 PK\" 체크박스 선택",
+        "step5": "<strong>관계 연결:</strong> 2개 이상의 테이블 생성 후 \"🔗 + 관계 추가\" 버튼 클릭"
+      },
+      "features": {
+        "title": "🔑 주요 기능",
+        "tableManagement": {
+          "title": "📊 테이블 관리",
+          "description": "테이블을 드래그하여 자유롭게 배치하고, 컬럼의 타입과 속성을 설정할 수 있습니다."
+        },
+        "relationships": {
+          "title": "🔗 관계 설정",
+          "description": "테이블 간의 1:1, 1:N, N:N 관계를 시각적으로 표현하고 외래키를 자동으로 생성합니다."
+        },
+        "autoSave": {
+          "title": "💾 자동 저장",
+          "description": "작업 내용을 로컬에 자동 저장하며, 서버에 저장하여 언제든 불러올 수 있습니다."
+        },
+        "ddlExport": {
+          "title": "📤 DDL 내보내기",
+          "description": "작성한 ERD를 MySQL, PostgreSQL, Oracle SQL DDL 코드로 변환합니다."
+        }
+      },
+      "icons": {
+        "title": "🎨 아이콘 설명",
+        "pk": "<strong>🔑 PK:</strong> Primary Key (기본키) - 테이블의 고유 식별자",
+        "fk": "<strong>🔗 FK:</strong> Foreign Key (외래키) - 다른 테이블을 참조하는 키",
+        "nn": "<strong>NN:</strong> Not Null - NULL 값을 허용하지 않음"
+      },
+      "tips": {
+        "title": "💡 팁",
+        "tip1": "테이블을 우클릭하면 편집/삭제 메뉴가 나타납니다",
+        "tip2": "관계선을 클릭하면 관계 설정을 편집할 수 있습니다",
+        "tip3": "모든 변경사항은 자동으로 저장됩니다 (저장 버튼 불필요)",
+        "tip4": "여러 사용자가 동시에 작업할 경우 버전 충돌이 발생하면 병합 옵션이 제공됩니다"
+      },
+      "faq": {
+        "title": "❓ 자주 묻는 질문",
+        "q1": {
+          "question": "Q: 테이블을 삭제하려면?",
+          "answer": "A: 테이블을 우클릭하고 \"삭제\"를 선택하거나, 테이블 편집 모달에서 삭제할 수 있습니다."
+        },
+        "q2": {
+          "question": "Q: 여러 컬럼을 PK로 지정할 수 있나요?",
+          "answer": "A: 네, 복합 기본키(Composite Primary Key)를 만들 수 있습니다."
+        },
+        "q3": {
+          "question": "Q: 저장한 다이어그램은 어디에 있나요?",
+          "answer": "A: \"📂 불러오기\" 버튼을 클릭하면 저장된 다이어그램 목록을 볼 수 있습니다."
+        }
+      },
+      "confirm": "확인"
+    }
+  },
+  "messages": {
+    "saveBeforeShare": "먼저 다이어그램을 저장해주세요.\\n저장된 다이어그램만 공유할 수 있습니다.",
+    "copyUrlPrompt": "다음 URL을 복사하세요:",
+    "noDiagramsSaved": "저장된 다이어그램이 없습니다.",
+    "loadError": "불러오기 중 오류가 발생했습니다.",
+    "confirmDeleteDiagram": "정말로 이 다이어그램을 삭제하시겠습니까?\\n삭제된 데이터는 복구할 수 없습니다.",
+    "saveBeforeExport": "먼저 다이어그램을 저장해주세요.",
+    "ddlGenerateError": "DDL 생성 실패: {error}",
+    "ddlExportError": "DDL 내보내기 중 오류가 발생했습니다.",
+    "needTwoTables": "관계를 추가하려면 최소 2개의 테이블이 필요합니다.",
+    "selectBothTables": "소스 테이블과 대상 테이블을 모두 선택해주세요.",
+    "selectBothColumns": "소스 컬럼과 대상 컬럼을 모두 선택해주세요.",
+    "columnCountMismatch": "소스 컬럼과 대상 컬럼의 개수가 같아야 합니다.",
+    "confirmDeleteRelationship": "이 관계를 삭제하시겠습니까?",
+    "confirmDeleteTable": "이 테이블을 삭제하시겠습니까?",
+    "confirmNewDiagram": "새 다이어그램을 만드시겠습니까? 저장하지 않은 변경사항은 손실됩니다.",
+    "ddlCopied": "DDL이 클립보드에 복사되었습니다.",
+    "confirmReplaceSample": "현재 다이어그램을 샘플로 교체하시겠습니까? 저장하지 않은 변경사항은 손실됩니다.",
+    "enterPhysicalName": "물리명을 입력해주세요.",
+    "confirmDeleteDictEntry": "이 표준 컬럼을 삭제하시겠습니까?",
+    "enterDdl": "DDL 문을 입력해주세요.",
+    "noValidDdl": "유효한 CREATE TABLE 문을 찾을 수 없습니다.",
+    "ddlParseError": "DDL 파싱 중 오류가 발생했습니다:\\n{error}",
+    "versionConflict": "{message}\\n\\n작업 중이던 내용은 임시 저장되었습니다.\\n다이어그램을 다시 불러오시겠습니까?"
+  },
+  "language": {
+    "korean": "한국어",
+    "english": "English",
+    "selectLanguage": "언어 선택"
+  }
+}

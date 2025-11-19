@@ -8,6 +8,11 @@ class ERDEditor {
         this.selectedRelationship = null;
         this.draggedTable = null;
         this.dragOffset = { x: 0, y: 0 };
+
+        // i18n helper method
+        this.t = (key, params = {}) => {
+            return window.i18n ? window.i18n.t(key, params) : key;
+        };
         this.autoSaveTimeout = null;
         this.autoSaveDelay = 2000; // 2 seconds debounce
 
@@ -102,7 +107,7 @@ class ERDEditor {
 
     async copyShareableURL() {
         if (!this.currentDiagramId) {
-            alert('먼저 다이어그램을 저장해주세요.\n저장된 다이어그램만 공유할 수 있습니다.');
+            alert(this.t('messages.saveBeforeShare'));
             return;
         }
 
@@ -126,7 +131,7 @@ class ERDEditor {
                 this.showNotification('URL이 클립보드에 복사되었습니다!', 'success');
             } catch (err) {
                 console.error('Failed to copy URL:', err);
-                prompt('다음 URL을 복사하세요:', url);
+                prompt(this.t('messages.copyUrlPrompt'), url);
             }
 
             document.body.removeChild(textArea);
@@ -231,7 +236,7 @@ class ERDEditor {
                 this.saveDraft();
                 this.setSaveStatus('error', '충돌 발생');
 
-                if (confirm(result.message + '\n\n작업 중이던 내용은 임시 저장되었습니다.\n다이어그램을 다시 불러오시겠습니까?')) {
+                if (confirm(this.t('messages.versionConflict', { message: result.message }))) {
                     await this.loadDiagramById(this.currentDiagramId);
                 }
             } else {
@@ -293,11 +298,11 @@ class ERDEditor {
             if (result.success && result.diagrams.length > 0) {
                 this.showDiagramListModal(result.diagrams);
             } else {
-                alert('저장된 다이어그램이 없습니다.');
+                alert(this.t('messages.noDiagramsSaved'));
             }
         } catch (error) {
             console.error('Load error:', error);
-            alert('불러오기 중 오류가 발생했습니다.');
+            alert(this.t('messages.loadError'));
         }
     }
 
@@ -331,7 +336,7 @@ class ERDEditor {
     }
 
     async deleteDiagram(diagramId) {
-        if (!confirm('정말로 이 다이어그램을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.')) {
+        if (!confirm(this.t('messages.confirmDeleteDiagram'))) {
             return;
         }
 
@@ -405,7 +410,7 @@ class ERDEditor {
     async exportDDL() {
         try {
             if (!this.currentDiagramId) {
-                alert('먼저 다이어그램을 저장해주세요.');
+                alert(this.t('messages.saveBeforeExport'));
                 return;
             }
 
@@ -416,11 +421,11 @@ class ERDEditor {
                 document.getElementById('ddl-output').textContent = result.ddl;
                 this.showModal('ddl-modal');
             } else {
-                alert('DDL 생성 실패: ' + result.error);
+                alert(this.t('messages.ddlGenerateError', { error: result.error }));
             }
         } catch (error) {
             console.error('Export DDL error:', error);
-            alert('DDL 내보내기 중 오류가 발생했습니다.');
+            alert(this.t('messages.ddlExportError'));
         }
     }
 
@@ -464,7 +469,7 @@ class ERDEditor {
 
     addRelationship() {
         if (this.diagram.tables.length < 2) {
-            alert('관계를 추가하려면 최소 2개의 테이블이 필요합니다.');
+            alert(this.t('messages.needTwoTables'));
             return;
         }
 
@@ -520,17 +525,17 @@ class ERDEditor {
         const targetColumnIds = Array.from(document.getElementById('rel-target-columns').selectedOptions).map(opt => opt.value);
 
         if (!sourceTableId || !targetTableId) {
-            alert('소스 테이블과 대상 테이블을 모두 선택해주세요.');
+            alert(this.t('messages.selectBothTables'));
             return;
         }
 
         if (sourceColumnIds.length === 0 || targetColumnIds.length === 0) {
-            alert('소스 컬럼과 대상 컬럼을 모두 선택해주세요.');
+            alert(this.t('messages.selectBothColumns'));
             return;
         }
 
         if (sourceColumnIds.length !== targetColumnIds.length) {
-            alert('소스 컬럼과 대상 컬럼의 개수가 같아야 합니다.');
+            alert(this.t('messages.columnCountMismatch'));
             return;
         }
 
@@ -569,7 +574,7 @@ class ERDEditor {
     }
 
     deleteRelationship(relId) {
-        if (confirm('이 관계를 삭제하시겠습니까?')) {
+        if (confirm(this.t('messages.confirmDeleteRelationship'))) {
             this.saveHistory(); // Save history before deletion
             const rel = this.diagram.relationships.find(r => r.id === relId);
             if (rel) {
@@ -734,7 +739,7 @@ class ERDEditor {
     }
 
     deleteTable(tableId) {
-        if (confirm('이 테이블을 삭제하시겠습니까?')) {
+        if (confirm(this.t('messages.confirmDeleteTable'))) {
             this.saveHistory(); // Save history before deletion
             this.diagram.tables = this.diagram.tables.filter(t => t.id !== tableId);
             this.diagram.relationships = this.diagram.relationships.filter(
@@ -1107,7 +1112,7 @@ class ERDEditor {
 
     bindEvents() {
         document.getElementById('btn-new').addEventListener('click', () => {
-            if (confirm('새 다이어그램을 만드시겠습니까? 저장하지 않은 변경사항은 손실됩니다.')) {
+            if (confirm(this.t('messages.confirmNewDiagram'))) {
                 this.createNewDiagram();
                 this.render();
             }
@@ -1222,7 +1227,7 @@ class ERDEditor {
         document.getElementById('btn-copy-ddl').addEventListener('click', () => {
             const ddl = document.getElementById('ddl-output').textContent;
             navigator.clipboard.writeText(ddl).then(() => {
-                alert('DDL이 클립보드에 복사되었습니다.');
+                alert(this.t('messages.ddlCopied'));
             });
         });
 
@@ -1731,7 +1736,7 @@ class ERDEditor {
 
     loadSampleDiagram() {
         if (this.diagram.tables.length > 0) {
-            if (!confirm('현재 다이어그램을 샘플로 교체하시겠습니까? 저장하지 않은 변경사항은 손실됩니다.')) {
+            if (!confirm(this.t('messages.confirmReplaceSample'))) {
                 return;
             }
         }
@@ -2264,7 +2269,7 @@ class ERDEditor {
         };
 
         if (!entry.physical_name) {
-            alert('물리명을 입력해주세요.');
+            alert(this.t('messages.enterPhysicalName'));
             return;
         }
 
@@ -2286,7 +2291,7 @@ class ERDEditor {
     }
 
     deleteDictEntry(entryId) {
-        if (confirm('이 표준 컬럼을 삭제하시겠습니까?')) {
+        if (confirm(this.t('messages.confirmDeleteDictEntry'))) {
             this.columnDictionary = this.columnDictionary.filter(e => e.id !== entryId);
             this.saveDictionary();
             this.renderDictionaryList();
@@ -2365,7 +2370,7 @@ class ERDEditor {
         const ddlText = document.getElementById('ddl-import-input').value;
 
         if (!ddlText.trim()) {
-            alert('DDL 문을 입력해주세요.');
+            alert(this.t('messages.enterDdl'));
             return;
         }
 
@@ -2373,7 +2378,7 @@ class ERDEditor {
             const parsedTables = this.parseDDL(ddlText);
 
             if (parsedTables.length === 0) {
-                alert('유효한 CREATE TABLE 문을 찾을 수 없습니다.');
+                alert(this.t('messages.noValidDdl'));
                 return;
             }
 
@@ -2422,7 +2427,7 @@ class ERDEditor {
             this.showNotification(`${importCount}개의 테이블을 성공적으로 import했습니다.`, 'success');
         } catch (error) {
             console.error('DDL Import error:', error);
-            alert('DDL 파싱 중 오류가 발생했습니다:\n' + error.message);
+            alert(this.t('messages.ddlParseError', { error: error.message }));
         }
     }
 

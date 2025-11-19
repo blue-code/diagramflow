@@ -21,18 +21,22 @@
                 <span class="version">v0.3.0</span>
             </div>
             <div class="header-right">
-                <div id="save-status" class="save-status" title="자동 저장 상태">
+                <select id="language-selector" class="language-selector" title="언어 선택">
+                    <option value="ko">🇰🇷 한국어</option>
+                    <option value="en">🇺🇸 English</option>
+                </select>
+                <div id="save-status" class="save-status" data-i18n-title="header.tooltips.saveStatus">
                     <span class="save-status-icon">💾</span>
-                    <span class="save-status-text">저장됨</span>
+                    <span class="save-status-text" data-i18n="header.saveStatus.saved">저장됨</span>
                 </div>
-                <button id="btn-undo" class="btn btn-secondary" title="실행 취소 (Ctrl+Z)" disabled>↶ 실행 취소</button>
-                <button id="btn-redo" class="btn btn-secondary" title="다시 실행 (Ctrl+Y)" disabled>↷ 다시 실행</button>
-                <button id="btn-help" class="btn btn-secondary" title="사용 가이드">❓ 도움말</button>
-                <button id="btn-copy-url" class="btn btn-secondary" title="다이어그램 URL 복사">🔗 URL 복사</button>
-                <button id="btn-export-image" class="btn btn-success" title="PNG 이미지로 내보내기">🖼️ 이미지 내보내기</button>
-                <button id="btn-new" class="btn btn-primary" title="새로운 다이어그램 시작">새 다이어그램</button>
-                <button id="btn-load" class="btn btn-info" title="저장된 다이어그램 불러오기">📂 불러오기</button>
-                <button id="btn-export-ddl" class="btn btn-warning" title="SQL DDL 코드 내보내기">📤 DDL 내보내기</button>
+                <button id="btn-undo" class="btn btn-secondary" data-i18n-title="header.tooltips.undo" disabled>↶ <span data-i18n="header.buttons.undo">실행 취소</span></button>
+                <button id="btn-redo" class="btn btn-secondary" data-i18n-title="header.tooltips.redo" disabled>↷ <span data-i18n="header.buttons.redo">다시 실행</span></button>
+                <button id="btn-help" class="btn btn-secondary" data-i18n-title="header.tooltips.help">❓ <span data-i18n="header.buttons.help">도움말</span></button>
+                <button id="btn-copy-url" class="btn btn-secondary" data-i18n-title="header.tooltips.copyUrl">🔗 <span data-i18n="header.buttons.copyUrl">URL 복사</span></button>
+                <button id="btn-export-image" class="btn btn-success" data-i18n-title="header.tooltips.exportImage">🖼️ <span data-i18n="header.buttons.exportImage">이미지 내보내기</span></button>
+                <button id="btn-new" class="btn btn-primary" data-i18n-title="header.tooltips.newDiagram"><span data-i18n="header.buttons.newDiagram">새 다이어그램</span></button>
+                <button id="btn-load" class="btn btn-info" data-i18n-title="header.tooltips.load">📂 <span data-i18n="header.buttons.load">불러오기</span></button>
+                <button id="btn-export-ddl" class="btn btn-warning" data-i18n-title="header.tooltips.exportDdl">📤 <span data-i18n="header.buttons.exportDdl">DDL 내보내기</span></button>
             </div>
         </header>
 
@@ -41,13 +45,13 @@
             <!-- Sidebar -->
             <aside class="sidebar">
                 <div class="sidebar-section">
-                    <h3>다이어그램 정보</h3>
+                    <h3 data-i18n="sidebar.diagramInfo.title">다이어그램 정보</h3>
                     <div class="form-group">
-                        <label for="diagram-name">이름:</label>
-                        <input type="text" id="diagram-name" class="form-control" placeholder="Untitled Diagram">
+                        <label for="diagram-name" data-i18n="sidebar.diagramInfo.name">이름:</label>
+                        <input type="text" id="diagram-name" class="form-control" data-i18n="sidebar.diagramInfo.namePlaceholder" placeholder="Untitled Diagram">
                     </div>
                     <div class="form-group">
-                        <label for="diagram-db-type">데이터베이스:</label>
+                        <label for="diagram-db-type" data-i18n="sidebar.diagramInfo.database">데이터베이스:</label>
                         <select id="diagram-db-type" class="form-control">
                             <option value="mysql">MySQL 8.0</option>
                             <option value="postgresql">PostgreSQL 15</option>
@@ -55,58 +59,58 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="view-mode">보기 모드:</label>
+                        <label for="view-mode" data-i18n="sidebar.diagramInfo.viewMode">보기 모드:</label>
                         <select id="view-mode" class="form-control">
-                            <option value="both">물리명 + 논리명</option>
-                            <option value="physical">물리명만</option>
-                            <option value="logical">논리명만</option>
+                            <option value="both" data-i18n="sidebar.diagramInfo.viewModes.both">물리명 + 논리명</option>
+                            <option value="physical" data-i18n="sidebar.diagramInfo.viewModes.physical">물리명만</option>
+                            <option value="logical" data-i18n="sidebar.diagramInfo.viewModes.logical">논리명만</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="sidebar-section">
-                    <h3>테이블 추가</h3>
-                    <button id="btn-add-table" class="btn btn-block btn-primary" title="새로운 테이블을 다이어그램에 추가합니다">📊 + 테이블 추가</button>
-                    <button id="btn-import-ddl" class="btn btn-block btn-secondary" title="DDL 문을 import하여 테이블을 추가합니다" style="margin-top: 0.5rem;">📥 DDL Import</button>
+                    <h3 data-i18n="sidebar.addTable.title">테이블 추가</h3>
+                    <button id="btn-add-table" class="btn btn-block btn-primary" data-i18n="sidebar.addTable.button" data-i18n-title="sidebar.addTable.buttonTooltip">📊 + 테이블 추가</button>
+                    <button id="btn-import-ddl" class="btn btn-block btn-secondary" data-i18n="sidebar.addTable.importDdl" data-i18n-title="sidebar.addTable.importDdlTooltip" style="margin-top: 0.5rem;">📥 DDL Import</button>
                 </div>
 
                 <div class="sidebar-section">
-                    <h3>관계 추가</h3>
-                    <button id="btn-add-relationship" class="btn btn-block btn-success" title="테이블 간의 관계(외래키)를 설정합니다">🔗 + 관계 추가</button>
+                    <h3 data-i18n="sidebar.addRelationship.title">관계 추가</h3>
+                    <button id="btn-add-relationship" class="btn btn-block btn-success" data-i18n="sidebar.addRelationship.button" data-i18n-title="sidebar.addRelationship.buttonTooltip">🔗 + 관계 추가</button>
                 </div>
 
                 <div class="sidebar-section">
-                    <h3>테이블 목록</h3>
+                    <h3 data-i18n="sidebar.tableList.title">테이블 목록</h3>
                     <div class="form-group">
-                        <input type="text" id="table-search" class="form-control" placeholder="🔍 테이블 검색...">
+                        <input type="text" id="table-search" class="form-control" data-i18n="sidebar.tableList.searchPlaceholder" placeholder="🔍 테이블 검색...">
                     </div>
                     <div id="table-list" class="table-list">
                         <!-- Tables will be listed here -->
-                        <div class="empty-state">테이블이 없습니다</div>
+                        <div class="empty-state" data-i18n="sidebar.tableList.emptyState">테이블이 없습니다</div>
                     </div>
                 </div>
 
                 <div class="sidebar-section">
-                    <h3>컬럼 사전</h3>
-                    <button id="btn-manage-dictionary" class="btn btn-block btn-info" title="컬럼 사전 관리">📖 사전 관리</button>
+                    <h3 data-i18n="sidebar.dictionary.title">컬럼 사전</h3>
+                    <button id="btn-manage-dictionary" class="btn btn-block btn-info" data-i18n="sidebar.dictionary.manageButton" data-i18n-title="sidebar.dictionary.manageTooltip">📖 사전 관리</button>
                     <div id="dictionary-summary" class="dictionary-summary">
-                        <small>등록된 표준 컬럼: <strong id="dict-count">0</strong>개</small>
+                        <small data-i18n-html="sidebar.dictionary.summary">등록된 표준 컬럼: <strong id="dict-count">0</strong>개</small>
                     </div>
                 </div>
 
                 <div class="sidebar-section">
-                    <h3>통계</h3>
+                    <h3 data-i18n="sidebar.statistics.title">통계</h3>
                     <div id="statistics" class="statistics">
                         <div class="stat-item">
-                            <span class="stat-label">테이블:</span>
+                            <span class="stat-label" data-i18n="sidebar.statistics.tables">테이블:</span>
                             <span class="stat-value" id="stat-tables">0</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-label">관계:</span>
+                            <span class="stat-label" data-i18n="sidebar.statistics.relationships">관계:</span>
                             <span class="stat-value" id="stat-relationships">0</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-label">컬럼:</span>
+                            <span class="stat-label" data-i18n="sidebar.statistics.columns">컬럼:</span>
                             <span class="stat-value" id="stat-columns">0</span>
                         </div>
                     </div>
@@ -624,8 +628,29 @@ CREATE TABLE orders (
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
     <!-- DiagramFlow Core Scripts -->
+    <script src="/static/js/i18n.js"></script>
     <script src="/static/js/theme-manager.js"></script>
     <script src="/static/js/collaboration.js"></script>
     <script src="/static/js/diagram.js"></script>
+
+    <!-- Initialize i18n -->
+    <script>
+        // Initialize i18n and setup language selector
+        window.addEventListener('DOMContentLoaded', async () => {
+            await window.i18n.init();
+
+            // Setup language selector
+            const languageSelector = document.getElementById('language-selector');
+            if (languageSelector) {
+                // Set current language
+                languageSelector.value = window.i18n.getCurrentLocale();
+
+                // Handle language change
+                languageSelector.addEventListener('change', async (e) => {
+                    await window.i18n.setLocale(e.target.value);
+                });
+            }
+        });
+    </script>
 </body>
 </html>

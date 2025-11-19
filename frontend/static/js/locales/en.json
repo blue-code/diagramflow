@@ -1,0 +1,318 @@
+{
+  "app": {
+    "title": "DiagramFlow",
+    "version": "v0.3.0"
+  },
+  "header": {
+    "saveStatus": {
+      "saved": "Saved",
+      "saving": "Saving...",
+      "unsaved": "Unsaved"
+    },
+    "buttons": {
+      "undo": "Undo",
+      "redo": "Redo",
+      "help": "Help",
+      "copyUrl": "Copy URL",
+      "exportImage": "Export Image",
+      "newDiagram": "New Diagram",
+      "load": "Load",
+      "exportDdl": "Export DDL"
+    },
+    "tooltips": {
+      "undo": "Undo (Ctrl+Z)",
+      "redo": "Redo (Ctrl+Y)",
+      "help": "User Guide",
+      "copyUrl": "Copy Diagram URL",
+      "exportImage": "Export as PNG Image",
+      "newDiagram": "Start New Diagram",
+      "load": "Load Saved Diagram",
+      "exportDdl": "Export SQL DDL Code"
+    }
+  },
+  "sidebar": {
+    "diagramInfo": {
+      "title": "Diagram Info",
+      "name": "Name:",
+      "namePlaceholder": "Untitled Diagram",
+      "database": "Database:",
+      "viewMode": "View Mode:",
+      "viewModes": {
+        "both": "Physical + Logical",
+        "physical": "Physical Only",
+        "logical": "Logical Only"
+      }
+    },
+    "addTable": {
+      "title": "Add Table",
+      "button": "📊 + Add Table",
+      "buttonTooltip": "Add a new table to the diagram",
+      "importDdl": "📥 Import DDL",
+      "importDdlTooltip": "Import tables from DDL statements"
+    },
+    "addRelationship": {
+      "title": "Add Relationship",
+      "button": "🔗 + Add Relationship",
+      "buttonTooltip": "Set up relationships (foreign keys) between tables"
+    },
+    "tableList": {
+      "title": "Table List",
+      "searchPlaceholder": "🔍 Search tables...",
+      "emptyState": "No tables"
+    },
+    "dictionary": {
+      "title": "Column Dictionary",
+      "manageButton": "📖 Manage Dictionary",
+      "manageTooltip": "Manage Column Dictionary",
+      "summary": "Registered standard columns: <strong id=\"dict-count\">0</strong>"
+    },
+    "statistics": {
+      "title": "Statistics",
+      "tables": "Tables:",
+      "relationships": "Relationships:",
+      "columns": "Columns:"
+    }
+  },
+  "canvas": {
+    "zoom": {
+      "zoomIn": "Zoom In",
+      "zoomOut": "Zoom Out",
+      "reset": "Reset",
+      "fitToScreen": "Fit to Screen",
+      "autoLayout": "Auto Layout"
+    },
+    "contextMenu": {
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "emptyState": {
+      "title": "🎯 Getting Started with ERD",
+      "subtitle": "Visualize and manage your database design",
+      "steps": {
+        "step1": {
+          "title": "📊 Add Table",
+          "description": "Click the \"Add Table\" button in the left sidebar"
+        },
+        "step2": {
+          "title": "✏️ Define Columns",
+          "description": "Add table name and columns, set PK/FK"
+        },
+        "step3": {
+          "title": "🔗 Set Relationships",
+          "description": "Connect relationships between tables to complete your ERD"
+        },
+        "step4": {
+          "title": "💾 Auto Save",
+          "description": "All changes are automatically saved"
+        }
+      },
+      "startButton": "Get Started",
+      "loadSampleButton": "Load Sample Diagram"
+    }
+  },
+  "modal": {
+    "table": {
+      "title": "Edit Table",
+      "physicalName": "Physical Name:",
+      "physicalNamePlaceholder": "tb_users",
+      "logicalName": "Logical Name:",
+      "logicalNamePlaceholder": "Users",
+      "comment": "Description:",
+      "commentPlaceholder": "Table description",
+      "category": "Category (Optional):",
+      "categoryPlaceholder": "e.g., User Management, Orders, Payments",
+      "columnsTitle": "Columns",
+      "addColumn": "+ Add Column",
+      "addFromDict": "📖 Add from Dictionary",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "ddl": {
+      "title": "Export DDL",
+      "copyButton": "Copy to Clipboard",
+      "close": "Close"
+    },
+    "relationship": {
+      "title": "Add Relationship",
+      "name": "Relationship Name (Optional):",
+      "namePlaceholder": "fk_users_orders",
+      "sourceTable": "Source Table (Parent, PK):",
+      "sourceTablePlaceholder": "-- Select Table --",
+      "sourceColumns": "Source Columns (PK):",
+      "sourceColumnsHelp": "Hold Ctrl/Cmd to select multiple columns",
+      "targetTable": "Target Table (Child, FK):",
+      "targetTablePlaceholder": "-- Select Table --",
+      "targetColumns": "Target Columns (FK):",
+      "targetColumnsHelp": "Hold Ctrl/Cmd to select multiple columns",
+      "cardinality": "Cardinality:",
+      "cardinalityOptions": {
+        "oneToMany": "1:N (One to Many)",
+        "oneToOne": "1:1 (One to One)",
+        "manyToMany": "N:N (Many to Many)"
+      },
+      "onDelete": "ON DELETE:",
+      "onDeleteOptions": {
+        "cascade": "CASCADE - Delete children when parent is deleted",
+        "setNull": "SET NULL - Set children to NULL when parent is deleted",
+        "restrict": "RESTRICT - Prevent deletion if children exist",
+        "noAction": "NO ACTION - No action"
+      },
+      "onUpdate": "ON UPDATE:",
+      "onUpdateOptions": {
+        "cascade": "CASCADE - Update children when parent is updated",
+        "setNull": "SET NULL - Set children to NULL when parent is updated",
+        "restrict": "RESTRICT - Prevent update if children exist",
+        "noAction": "NO ACTION - No action"
+      },
+      "comment": "Description:",
+      "commentPlaceholder": "Relationship description",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "merge": {
+      "title": "⚠️ Resolve Version Conflict",
+      "message1": "Another user has modified the diagram.",
+      "message2": "Your work has been temporarily saved. How would you like to proceed?",
+      "useDraft": "Use My Changes",
+      "useServer": "Use Server Version",
+      "merge": "🔀 Attempt Merge (My Tables + Server Relationships)",
+      "help": {
+        "title": "Help:",
+        "useDraft": "• <strong>Use My Changes</strong>: Keep all your work",
+        "useServer": "• <strong>Use Server Version</strong>: Apply other user's changes and discard your work",
+        "merge": "• <strong>Attempt Merge</strong>: Automatically merge both versions (manual review required)"
+      }
+    },
+    "dictionary": {
+      "title": "📖 Manage Column Dictionary",
+      "info": "Register frequently used columns in the dictionary for consistent database design.",
+      "addButton": "+ Add Standard Column",
+      "close": "Close"
+    },
+    "dictSelect": {
+      "title": "📖 Select Column from Dictionary",
+      "searchPlaceholder": "🔍 Search columns...",
+      "cancel": "Cancel"
+    },
+    "dictEntry": {
+      "title": "Add Standard Column",
+      "physicalName": "Physical Name:",
+      "physicalNamePlaceholder": "user_id",
+      "logicalName": "Logical Name:",
+      "logicalNamePlaceholder": "User ID",
+      "dataType": "Data Type:",
+      "length": "Length:",
+      "lengthPlaceholder": "255",
+      "notNull": "Not Null",
+      "description": "Description:",
+      "descriptionPlaceholder": "Description of this column",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "diagramList": {
+      "title": "📂 Saved Diagrams",
+      "close": "Close"
+    },
+    "ddlImport": {
+      "title": "📥 Import DDL",
+      "info1": "Paste CREATE TABLE statements to automatically parse and add tables.",
+      "info2": "💡 You can paste multiple CREATE TABLE statements at once.",
+      "label": "DDL Statement:",
+      "import": "Import",
+      "cancel": "Cancel"
+    },
+    "help": {
+      "title": "📖 User Guide",
+      "intro": {
+        "title": "🎯 What is DiagramFlow?",
+        "description": "DiagramFlow is a collaborative tool for creating database ERD (Entity Relationship Diagrams) easily and quickly."
+      },
+      "quickStart": {
+        "title": "🚀 Quick Start",
+        "step1": "<strong>Add Table:</strong> Click the \"📊 + Add Table\" button in the left sidebar",
+        "step2": "<strong>Edit Table:</strong> Click or right-click on a table to edit it",
+        "step3": "<strong>Add Column:</strong> Click the \"Add Column\" button in the table edit screen",
+        "step4": "<strong>Set PK:</strong> Check the \"🔑 PK\" checkbox in the column row",
+        "step5": "<strong>Connect Relationships:</strong> After creating 2+ tables, click the \"🔗 + Add Relationship\" button"
+      },
+      "features": {
+        "title": "🔑 Key Features",
+        "tableManagement": {
+          "title": "📊 Table Management",
+          "description": "Drag tables to freely arrange them, and set column types and attributes."
+        },
+        "relationships": {
+          "title": "🔗 Relationships",
+          "description": "Visually represent 1:1, 1:N, N:N relationships and automatically generate foreign keys."
+        },
+        "autoSave": {
+          "title": "💾 Auto Save",
+          "description": "Automatically save your work locally and to the server for later retrieval."
+        },
+        "ddlExport": {
+          "title": "📤 DDL Export",
+          "description": "Convert your ERD to MySQL, PostgreSQL, or Oracle SQL DDL code."
+        }
+      },
+      "icons": {
+        "title": "🎨 Icon Description",
+        "pk": "<strong>🔑 PK:</strong> Primary Key - Unique identifier for the table",
+        "fk": "<strong>🔗 FK:</strong> Foreign Key - Key referencing another table",
+        "nn": "<strong>NN:</strong> Not Null - Does not allow NULL values"
+      },
+      "tips": {
+        "title": "💡 Tips",
+        "tip1": "Right-click on a table to see edit/delete menu",
+        "tip2": "Click on a relationship line to edit the relationship settings",
+        "tip3": "All changes are automatically saved (no save button required)",
+        "tip4": "If multiple users work simultaneously and version conflicts occur, merge options are provided"
+      },
+      "faq": {
+        "title": "❓ FAQ",
+        "q1": {
+          "question": "Q: How do I delete a table?",
+          "answer": "A: Right-click on the table and select \"Delete\", or delete it from the table edit modal."
+        },
+        "q2": {
+          "question": "Q: Can I designate multiple columns as PK?",
+          "answer": "A: Yes, you can create a Composite Primary Key."
+        },
+        "q3": {
+          "question": "Q: Where are saved diagrams?",
+          "answer": "A: Click the \"📂 Load\" button to see the list of saved diagrams."
+        }
+      },
+      "confirm": "OK"
+    }
+  },
+  "messages": {
+    "saveBeforeShare": "Please save the diagram first.\\nOnly saved diagrams can be shared.",
+    "copyUrlPrompt": "Copy this URL:",
+    "noDiagramsSaved": "No saved diagrams.",
+    "loadError": "An error occurred while loading.",
+    "confirmDeleteDiagram": "Are you sure you want to delete this diagram?\\nDeleted data cannot be recovered.",
+    "saveBeforeExport": "Please save the diagram first.",
+    "ddlGenerateError": "DDL generation failed: {error}",
+    "ddlExportError": "An error occurred while exporting DDL.",
+    "needTwoTables": "At least 2 tables are required to add a relationship.",
+    "selectBothTables": "Please select both source and target tables.",
+    "selectBothColumns": "Please select both source and target columns.",
+    "columnCountMismatch": "The number of source and target columns must be the same.",
+    "confirmDeleteRelationship": "Do you want to delete this relationship?",
+    "confirmDeleteTable": "Do you want to delete this table?",
+    "confirmNewDiagram": "Do you want to create a new diagram? Unsaved changes will be lost.",
+    "ddlCopied": "DDL copied to clipboard.",
+    "confirmReplaceSample": "Do you want to replace the current diagram with a sample? Unsaved changes will be lost.",
+    "enterPhysicalName": "Please enter a physical name.",
+    "confirmDeleteDictEntry": "Do you want to delete this standard column?",
+    "enterDdl": "Please enter DDL statement.",
+    "noValidDdl": "No valid CREATE TABLE statement found.",
+    "ddlParseError": "An error occurred while parsing DDL:\\n{error}",
+    "versionConflict": "{message}\\n\\nYour work has been temporarily saved.\\nDo you want to reload the diagram?"
+  },
+  "language": {
+    "korean": "한국어",
+    "english": "English",
+    "selectLanguage": "Select Language"
+  }
+}
