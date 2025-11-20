@@ -135,6 +135,36 @@
     --table-border: #FEB2B2;
 }
 
+/* Cosmic Glass Theme (New Default) */
+[data-theme="cosmic"] {
+    --primary-color: #00f2ff;
+    --success-color: #00ff9d;
+    --warning-color: #ffeb3b;
+    --danger-color: #ff0055;
+    --info-color: #bd00ff;
+    --dark-color: #050510;
+    --light-color: #e0e0ff;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+
+    --bg-main: #050510;
+    --bg-canvas: #0a0a1a;
+    --bg-sidebar: rgba(20, 20, 35, 0.6);
+    --bg-card: rgba(30, 30, 50, 0.4);
+
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0c0;
+    --text-muted: #606080;
+
+    --table-header: rgba(0, 242, 255, 0.2);
+    --table-header-text: #00f2ff;
+    --table-body: rgba(20, 20, 35, 0.8);
+    --table-border: rgba(0, 242, 255, 0.3);
+    
+    --glass-border: 1px solid rgba(255, 255, 255, 0.05);
+    --glass-highlight: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 /* Purple Theme */
 [data-theme="purple"] {
     --primary-color: #805AD5;
@@ -159,6 +189,9 @@
     --table-header-text: white;
     --table-body: #FAF5FF;
     --table-border: #D6BCFA;
+    
+    --glass-border: 1px solid var(--border-color);
+    --glass-highlight: none;
 }
 
 /* Apply theme variables */

@@ -6,8 +6,13 @@
 
 class ThemeManager {
     constructor() {
-        this.currentTheme = 'light';
+        this.currentTheme = 'cosmic';
         this.themes = [
+            {
+                id: 'cosmic',
+                name: 'Cosmic Glass',
+                description: 'Modern dark theme with neon accents'
+            },
             {
                 id: 'light',
                 name: 'Light',
