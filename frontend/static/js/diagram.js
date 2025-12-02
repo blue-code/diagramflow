@@ -862,7 +862,8 @@ class ERDEditor {
         g.classList.add('table-box');
         g.dataset.tableId = table.id;
 
-        const width = 250;
+        const size = this.calculateTableSize(table);
+        const width = size.width;
         const headerHeight = 30;
         const rowHeight = 20;
         const bodyHeight = Math.max(table.columns.length * rowHeight, 40);
@@ -883,21 +884,7 @@ class ERDEditor {
         title.setAttribute('x', table.position.x + width / 2);
         title.setAttribute('y', table.position.y + 20);
         title.setAttribute('text-anchor', 'middle');
-
-        // Display based on view mode
-        let titleText = '';
-        if (this.viewMode === 'physical') {
-            titleText = table.physical_name;
-        } else if (this.viewMode === 'logical') {
-            titleText = table.logical_name || table.physical_name;
-        } else { // 'both'
-            if (table.logical_name) {
-                titleText = `${table.logical_name} (${table.physical_name})`;
-            } else {
-                titleText = table.physical_name;
-            }
-        }
-        title.textContent = titleText;
+        title.textContent = this.getTableTitle(table);
         g.appendChild(title);
 
         // Table body
@@ -930,44 +917,7 @@ class ERDEditor {
                 icon = '🔗 ';    // Foreign Key
             }
 
-            // Display column name based on view mode
-            let colName = '';
-            if (this.viewMode === 'physical') {
-                colName = column.physical_name;
-            } else if (this.viewMode === 'logical') {
-                colName = column.logical_name || column.physical_name;
-            } else { // 'both'
-                if (column.logical_name) {
-                    colName = `${column.logical_name} (${column.physical_name})`;
-                } else {
-                    colName = column.physical_name;
-                }
-            }
-
-            // Format data type with length
-            let dataType = column.data_type.toUpperCase();
-            if (column.length) {
-                // Add length for types that support it
-                if (['STRING', 'VARCHAR', 'CHAR'].includes(dataType)) {
-                    dataType = `VARCHAR(${column.length})`;
-                } else if (['INTEGER', 'INT'].includes(dataType)) {
-                    dataType = `INT(${column.length})`;
-                } else if (['BIGINT'].includes(dataType)) {
-                    dataType = `BIGINT(${column.length})`;
-                }
-            } else {
-                // Use default display names
-                if (dataType === 'STRING') {
-                    dataType = 'VARCHAR';
-                } else if (dataType === 'INTEGER') {
-                    dataType = 'INT';
-                }
-            }
-
-            // Add nullable indicator
-            const nullableIndicator = column.nullable ? '' : ' NN';
-
-            text.textContent = `${icon}${colName} ${dataType}${nullableIndicator}`;
+            text.textContent = `${icon}${this.getColumnDisplayText(column)}`;
 
             // Add different styling for FK columns
             if (isFK && !isPK) {
@@ -1329,6 +1279,83 @@ class ERDEditor {
         return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
 
+    getTextWidth(text, font) {
+        if (!this.canvasContext) {
+            const canvas = document.createElement('canvas');
+            this.canvasContext = canvas.getContext('2d');
+        }
+        this.canvasContext.font = font;
+        return this.canvasContext.measureText(text).width;
+    }
+
+    getTableTitle(table) {
+        if (this.viewMode === 'physical') {
+            return table.physical_name;
+        } else if (this.viewMode === 'logical') {
+            return table.logical_name || table.physical_name;
+        } else { // 'both'
+            if (table.logical_name) {
+                return `${table.logical_name} (${table.physical_name})`;
+            } else {
+                return table.physical_name;
+            }
+        }
+    }
+
+    getColumnDisplayText(column) {
+        let colName = '';
+        if (this.viewMode === 'physical') {
+            colName = column.physical_name;
+        } else if (this.viewMode === 'logical') {
+            colName = column.logical_name || column.physical_name;
+        } else { // 'both'
+            if (column.logical_name) {
+                colName = `${column.logical_name} (${column.physical_name})`;
+            } else {
+                colName = column.physical_name;
+            }
+        }
+
+        let dataType = column.data_type.toUpperCase();
+        if (column.length) {
+            if (['STRING', 'VARCHAR', 'CHAR'].includes(dataType)) {
+                dataType = `VARCHAR(${column.length})`;
+            } else if (['INTEGER', 'INT'].includes(dataType)) {
+                dataType = `INT(${column.length})`;
+            } else if (['BIGINT'].includes(dataType)) {
+                dataType = `BIGINT(${column.length})`;
+            }
+        } else {
+            if (dataType === 'STRING') dataType = 'VARCHAR';
+            else if (dataType === 'INTEGER') dataType = 'INT';
+        }
+
+        const nullableIndicator = column.nullable ? '' : ' NN';
+        return `${colName} ${dataType}${nullableIndicator}`;
+    }
+
+    calculateTableSize(table) {
+        const headerFont = '600 14px Sora, sans-serif';
+        const columnFont = '12px "JetBrains Mono", monospace';
+        const padding = 30;
+        const iconWidth = 25;
+
+        const titleText = this.getTableTitle(table);
+        const titleWidth = this.getTextWidth(titleText, headerFont) + 40;
+
+        let maxColumnWidth = 0;
+        table.columns.forEach(column => {
+            const fullText = this.getColumnDisplayText(column);
+            const width = this.getTextWidth(fullText, columnFont) + iconWidth + padding;
+            if (width > maxColumnWidth) maxColumnWidth = width;
+        });
+
+        const width = Math.max(200, titleWidth, maxColumnWidth);
+        const height = Math.max(table.columns.length * 20, 40) + 30;
+
+        return { width, height };
+    }
+
     // ==================== Zoom/Pan Management ====================
 
     zoomIn() {
@@ -1361,8 +1388,9 @@ class ERDEditor {
         this.diagram.tables.forEach(table => {
             const x = table.position.x;
             const y = table.position.y;
-            const width = 250; // Approximate table width
-            const height = 80 + table.columns.length * 25; // Approximate table height
+            const size = this.calculateTableSize(table);
+            const width = size.width;
+            const height = size.height;
 
             minX = Math.min(minX, x);
             minY = Math.min(minY, y);
@@ -1405,10 +1433,20 @@ class ERDEditor {
 
         this.saveHistory(); // Save before layout change
 
+        // Calculate max dimensions for grid cells
+        let maxTableWidth = 250;
+        let maxTableHeight = 200;
+
+        this.diagram.tables.forEach(table => {
+            const size = this.calculateTableSize(table);
+            maxTableWidth = Math.max(maxTableWidth, size.width);
+            maxTableHeight = Math.max(maxTableHeight, size.height);
+        });
+
         // Simple grid layout algorithm
         const gridCols = Math.ceil(Math.sqrt(this.diagram.tables.length));
-        const cellWidth = 320;
-        const cellHeight = 280;
+        const cellWidth = maxTableWidth + 50; // Add padding
+        const cellHeight = maxTableHeight + 50; // Add padding
         const startX = 50;
         const startY = 50;
 
@@ -2328,7 +2366,7 @@ class ERDEditor {
             if (!searchTerm) return true;
             const search = searchTerm.toLowerCase();
             return entry.physical_name.toLowerCase().includes(search) ||
-                   (entry.logical_name && entry.logical_name.toLowerCase().includes(search));
+                (entry.logical_name && entry.logical_name.toLowerCase().includes(search));
         });
 
         if (filteredDict.length === 0) {
