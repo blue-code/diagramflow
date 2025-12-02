@@ -810,11 +810,27 @@ class ERDEditor {
     updateEmptyStateGuide() {
         const emptyGuide = document.getElementById('empty-state-guide');
 
-        // Show guide only when there are no tables
-        if (this.diagram.tables.length === 0) {
+        // Check if user has chosen not to show the guide again
+        const dontShowAgain = localStorage.getItem('dontShowGuideAgain') === 'true';
+
+        // Show guide only when there are no tables and user hasn't disabled it
+        if (this.diagram.tables.length === 0 && !dontShowAgain) {
             emptyGuide.style.display = 'block';
         } else {
             emptyGuide.style.display = 'none';
+        }
+    }
+
+    hideGuideAndSavePreference() {
+        const checkbox = document.getElementById('dont-show-guide-again');
+        const emptyGuide = document.getElementById('empty-state-guide');
+
+        // Hide the guide
+        emptyGuide.style.display = 'none';
+
+        // Save preference if checkbox is checked
+        if (checkbox && checkbox.checked) {
+            localStorage.setItem('dontShowGuideAgain', 'true');
         }
     }
 
@@ -1145,12 +1161,13 @@ class ERDEditor {
 
         // Start guide button
         document.getElementById('btn-start-guide').addEventListener('click', () => {
-            document.getElementById('empty-state-guide').style.display = 'none';
+            this.hideGuideAndSavePreference();
             this.addTable();
         });
 
         // Load sample diagram button
         document.getElementById('btn-load-sample').addEventListener('click', () => {
+            this.hideGuideAndSavePreference();
             this.loadSampleDiagram();
         });
 
