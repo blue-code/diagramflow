@@ -1,5 +1,93 @@
 // Python ERD Tool - Diagram Editor
 
+// Database-specific column type definitions
+const DB_TYPES = {
+    mysql: [
+        { value: 'varchar', label: 'VARCHAR', hasLength: true },
+        { value: 'int', label: 'INT', hasLength: true },
+        { value: 'bigint', label: 'BIGINT', hasLength: true },
+        { value: 'tinyint', label: 'TINYINT', hasLength: true },
+        { value: 'smallint', label: 'SMALLINT', hasLength: true },
+        { value: 'mediumint', label: 'MEDIUMINT', hasLength: true },
+        { value: 'text', label: 'TEXT', hasLength: false },
+        { value: 'mediumtext', label: 'MEDIUMTEXT', hasLength: false },
+        { value: 'longtext', label: 'LONGTEXT', hasLength: false },
+        { value: 'datetime', label: 'DATETIME', hasLength: false },
+        { value: 'timestamp', label: 'TIMESTAMP', hasLength: false },
+        { value: 'date', label: 'DATE', hasLength: false },
+        { value: 'time', label: 'TIME', hasLength: false },
+        { value: 'year', label: 'YEAR', hasLength: false },
+        { value: 'boolean', label: 'BOOLEAN', hasLength: false },
+        { value: 'decimal', label: 'DECIMAL', hasLength: true },
+        { value: 'float', label: 'FLOAT', hasLength: true },
+        { value: 'double', label: 'DOUBLE', hasLength: true },
+        { value: 'char', label: 'CHAR', hasLength: true },
+        { value: 'binary', label: 'BINARY', hasLength: true },
+        { value: 'varbinary', label: 'VARBINARY', hasLength: true },
+        { value: 'blob', label: 'BLOB', hasLength: false },
+        { value: 'enum', label: 'ENUM', hasLength: false },
+        { value: 'set', label: 'SET', hasLength: false },
+        { value: 'json', label: 'JSON', hasLength: false }
+    ],
+    postgresql: [
+        { value: 'varchar', label: 'VARCHAR', hasLength: true },
+        { value: 'character varying', label: 'CHARACTER VARYING', hasLength: true },
+        { value: 'char', label: 'CHAR', hasLength: true },
+        { value: 'text', label: 'TEXT', hasLength: false },
+        { value: 'integer', label: 'INTEGER', hasLength: false },
+        { value: 'bigint', label: 'BIGINT', hasLength: false },
+        { value: 'smallint', label: 'SMALLINT', hasLength: false },
+        { value: 'serial', label: 'SERIAL', hasLength: false },
+        { value: 'bigserial', label: 'BIGSERIAL', hasLength: false },
+        { value: 'smallserial', label: 'SMALLSERIAL', hasLength: false },
+        { value: 'numeric', label: 'NUMERIC', hasLength: true },
+        { value: 'decimal', label: 'DECIMAL', hasLength: true },
+        { value: 'real', label: 'REAL', hasLength: false },
+        { value: 'double precision', label: 'DOUBLE PRECISION', hasLength: false },
+        { value: 'boolean', label: 'BOOLEAN', hasLength: false },
+        { value: 'date', label: 'DATE', hasLength: false },
+        { value: 'timestamp', label: 'TIMESTAMP', hasLength: false },
+        { value: 'timestamp with time zone', label: 'TIMESTAMP WITH TIME ZONE', hasLength: false },
+        { value: 'timestamp without time zone', label: 'TIMESTAMP WITHOUT TIME ZONE', hasLength: false },
+        { value: 'time', label: 'TIME', hasLength: false },
+        { value: 'time with time zone', label: 'TIME WITH TIME ZONE', hasLength: false },
+        { value: 'interval', label: 'INTERVAL', hasLength: false },
+        { value: 'uuid', label: 'UUID', hasLength: false },
+        { value: 'json', label: 'JSON', hasLength: false },
+        { value: 'jsonb', label: 'JSONB', hasLength: false },
+        { value: 'bytea', label: 'BYTEA', hasLength: false },
+        { value: 'money', label: 'MONEY', hasLength: false },
+        { value: 'inet', label: 'INET', hasLength: false },
+        { value: 'cidr', label: 'CIDR', hasLength: false },
+        { value: 'macaddr', label: 'MACADDR', hasLength: false }
+    ],
+    oracle: [
+        { value: 'varchar2', label: 'VARCHAR2', hasLength: true },
+        { value: 'nvarchar2', label: 'NVARCHAR2', hasLength: true },
+        { value: 'char', label: 'CHAR', hasLength: true },
+        { value: 'nchar', label: 'NCHAR', hasLength: true },
+        { value: 'number', label: 'NUMBER', hasLength: true },
+        { value: 'integer', label: 'INTEGER', hasLength: false },
+        { value: 'float', label: 'FLOAT', hasLength: true },
+        { value: 'binary_float', label: 'BINARY_FLOAT', hasLength: false },
+        { value: 'binary_double', label: 'BINARY_DOUBLE', hasLength: false },
+        { value: 'date', label: 'DATE', hasLength: false },
+        { value: 'timestamp', label: 'TIMESTAMP', hasLength: true },
+        { value: 'timestamp with time zone', label: 'TIMESTAMP WITH TIME ZONE', hasLength: true },
+        { value: 'timestamp with local time zone', label: 'TIMESTAMP WITH LOCAL TIME ZONE', hasLength: true },
+        { value: 'interval year to month', label: 'INTERVAL YEAR TO MONTH', hasLength: false },
+        { value: 'interval day to second', label: 'INTERVAL DAY TO SECOND', hasLength: false },
+        { value: 'clob', label: 'CLOB', hasLength: false },
+        { value: 'nclob', label: 'NCLOB', hasLength: false },
+        { value: 'blob', label: 'BLOB', hasLength: false },
+        { value: 'bfile', label: 'BFILE', hasLength: false },
+        { value: 'raw', label: 'RAW', hasLength: true },
+        { value: 'long raw', label: 'LONG RAW', hasLength: false },
+        { value: 'rowid', label: 'ROWID', hasLength: false },
+        { value: 'urowid', label: 'UROWID', hasLength: true }
+    ]
+};
+
 class ERDEditor {
     constructor() {
         this.diagram = null;
@@ -716,11 +804,18 @@ class ERDEditor {
                 ? this.selectedTable.columns.find(c => c.id === columnId)
                 : null;
 
+            // Get selected type from dropdown
+            const selectedRawType = row.querySelector('.col-data-type').value;
+
+            // Derive normalized data_type from raw_data_type
+            const normalizedType = this.normalizeDataType(selectedRawType);
+
             return {
                 id: columnId || this.generateId(),
                 physical_name: row.querySelector('.col-physical-name').value,
                 logical_name: row.querySelector('.col-logical-name').value,
-                data_type: row.querySelector('.col-data-type').value,
+                data_type: normalizedType,
+                raw_data_type: selectedRawType,
                 length: parseInt(row.querySelector('.col-length').value) || null,
                 nullable: !row.querySelector('.col-not-null').checked,
                 primary_key: row.querySelector('.col-pk').checked,
@@ -767,16 +862,24 @@ class ERDEditor {
         const isFK = column?.foreign_key && column?.foreign_key.table_id;
         const fkInfo = isFK ? `<span class="fk-badge" title="Foreign Key">FK</span>` : '';
 
+        // Get database-specific types
+        const dbType = this.diagram.database_type || 'mysql';
+        const types = DB_TYPES[dbType] || DB_TYPES.mysql;
+
+        // Determine which value to select
+        const currentValue = column?.raw_data_type || column?.data_type || '';
+
+        // Generate type options
+        const typeOptions = types.map(type => {
+            const isSelected = currentValue.toLowerCase() === type.value.toLowerCase();
+            return `<option value="${type.value}" ${isSelected ? 'selected' : ''}>${type.label}</option>`;
+        }).join('');
+
         row.innerHTML = `
             <input type="text" class="col-physical-name" placeholder="column_name" value="${column?.physical_name || ''}">
             <input type="text" class="col-logical-name" placeholder="컬럼명" value="${column?.logical_name || ''}">
             <select class="col-data-type">
-                <option value="string" ${column?.data_type === 'string' ? 'selected' : ''}>VARCHAR</option>
-                <option value="integer" ${column?.data_type === 'integer' ? 'selected' : ''}>INT</option>
-                <option value="bigint" ${column?.data_type === 'bigint' ? 'selected' : ''}>BIGINT</option>
-                <option value="text" ${column?.data_type === 'text' ? 'selected' : ''}>TEXT</option>
-                <option value="datetime" ${column?.data_type === 'datetime' ? 'selected' : ''}>DATETIME</option>
-                <option value="boolean" ${column?.data_type === 'boolean' ? 'selected' : ''}>BOOLEAN</option>
+                ${typeOptions}
             </select>
             <input type="number" class="col-length" placeholder="길이" value="${column?.length || ''}" style="width: 60px;">
             <label class="pk-label" title="Primary Key">
@@ -1279,6 +1382,86 @@ class ERDEditor {
         return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
 
+    normalizeDataType(rawType) {
+        const lowerType = rawType.toLowerCase();
+
+        // Integer types
+        if (/^(tiny|small|medium|big)?int(eger)?$/.test(lowerType)) {
+            if (lowerType.includes('big')) return 'bigint';
+            if (lowerType.includes('tiny') || lowerType.includes('small') || lowerType.includes('medium')) return 'integer';
+            return 'integer';
+        }
+
+        // Serial types (PostgreSQL auto-increment)
+        if (/^(small|big)?serial$/.test(lowerType)) {
+            if (lowerType.includes('big')) return 'bigint';
+            return 'integer';
+        }
+
+        // String types
+        if (/^(var)?char/.test(lowerType) || /^character varying/.test(lowerType) || /^n?(var)?char2?/.test(lowerType)) {
+            return 'string';
+        }
+
+        // Text types
+        if (/text|clob|blob|bytea|long raw|bfile/.test(lowerType)) {
+            return 'text';
+        }
+
+        // Numeric types
+        if (/^(number|numeric|decimal|float|double|real|binary_(float|double))/.test(lowerType)) {
+            return 'integer';  // Simplified for now
+        }
+
+        // Date/Time types
+        if (/^(date|time|timestamp|datetime|interval)/.test(lowerType)) {
+            return 'datetime';
+        }
+
+        // Boolean
+        if (/^bool(ean)?$/.test(lowerType)) {
+            return 'boolean';
+        }
+
+        // JSON
+        if (/^jsonb?$/.test(lowerType)) {
+            return 'json';
+        }
+
+        // UUID
+        if (/^uuid$/.test(lowerType)) {
+            return 'string';
+        }
+
+        // Binary types
+        if (/^(binary|varbinary|raw)/.test(lowerType)) {
+            return 'string';
+        }
+
+        // Enum/Set
+        if (/^(enum|set)$/.test(lowerType)) {
+            return 'string';
+        }
+
+        // Network types (PostgreSQL)
+        if (/^(inet|cidr|macaddr)/.test(lowerType)) {
+            return 'string';
+        }
+
+        // Money (PostgreSQL)
+        if (/^money$/.test(lowerType)) {
+            return 'integer';
+        }
+
+        // Special Oracle types
+        if (/^(rowid|urowid)$/.test(lowerType)) {
+            return 'string';
+        }
+
+        // Default fallback
+        return 'string';
+    }
+
     getTextWidth(text, font) {
         if (!this.canvasContext) {
             const canvas = document.createElement('canvas');
@@ -1316,18 +1499,35 @@ class ERDEditor {
             }
         }
 
-        let dataType = column.data_type.toUpperCase();
-        if (column.length) {
-            if (['STRING', 'VARCHAR', 'CHAR'].includes(dataType)) {
-                dataType = `VARCHAR(${column.length})`;
-            } else if (['INTEGER', 'INT'].includes(dataType)) {
-                dataType = `INT(${column.length})`;
-            } else if (['BIGINT'].includes(dataType)) {
-                dataType = `BIGINT(${column.length})`;
-            }
+        // Use raw_data_type if available (for database-specific display)
+        let dataType;
+        if (column.raw_data_type) {
+            dataType = column.raw_data_type.toUpperCase();
         } else {
-            if (dataType === 'STRING') dataType = 'VARCHAR';
-            else if (dataType === 'INTEGER') dataType = 'INT';
+            // Fallback to old logic for backward compatibility
+            dataType = column.data_type.toUpperCase();
+            if (column.length) {
+                if (['STRING', 'VARCHAR', 'CHAR'].includes(dataType)) {
+                    dataType = `VARCHAR(${column.length})`;
+                } else if (['INTEGER', 'INT'].includes(dataType)) {
+                    dataType = `INT(${column.length})`;
+                } else if (['BIGINT'].includes(dataType)) {
+                    dataType = `BIGINT(${column.length})`;
+                }
+            } else {
+                if (dataType === 'STRING') dataType = 'VARCHAR';
+                else if (dataType === 'INTEGER') dataType = 'INT';
+            }
+        }
+
+        // Add length if applicable and not already included in raw type
+        if (column.length && column.raw_data_type && !dataType.includes('(')) {
+            // Check if this type supports length
+            const dbType = this.diagram.database_type || 'mysql';
+            const typeConfig = DB_TYPES[dbType]?.find(t => t.value.toLowerCase() === column.raw_data_type.toLowerCase());
+            if (typeConfig?.hasLength) {
+                dataType = `${dataType}(${column.length})`;
+            }
         }
 
         const nullableIndicator = column.nullable ? '' : ' NN';
@@ -2453,6 +2653,7 @@ class ERDEditor {
                         physical_name: col.name,
                         logical_name: col.logicalName || '',
                         data_type: col.dataType,
+                        raw_data_type: col.raw_data_type,
                         length: col.length,
                         nullable: col.nullable,
                         primary_key: col.isPrimaryKey,
@@ -2857,6 +3058,7 @@ class ERDEditor {
             name: columnName,
             logicalName: '',
             dataType: normalizedType,
+            raw_data_type: dataType, // Store original SQL type
             length: length,
             nullable: !isNotNull && !isPrimaryKey,
             isPrimaryKey: isPrimaryKey,
@@ -2867,7 +3069,7 @@ class ERDEditor {
             comment: comment
         };
 
-        console.log(`  ✅ SUCCESS: ${columnName} → ${normalizedType}${length ? '(' + length + ')' : ''}`);
+        console.log(`  ✅ SUCCESS: ${columnName} → ${normalizedType} (raw: ${dataType})${length ? '(' + length + ')' : ''}`);
         return result;
     }
 }
