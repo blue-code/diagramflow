@@ -170,34 +170,46 @@ body {
 
 /* Form Elements */
 .form-group {
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
 }
 
 .form-group label {
     display: block;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--text-secondary);
-    margin-bottom: 0.4rem;
-    font-weight: 500;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
 }
 
 .form-control {
     width: 100%;
-    padding: 0.6rem 0.8rem;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.75rem 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: var(--border-radius-sm);
     color: var(--text-primary);
     font-family: 'Manrope', sans-serif;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     transition: all 0.2s ease;
+}
+
+.form-control:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.4);
 }
 
 .form-control:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(0, 242, 255, 0.1);
-    background: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0 3px rgba(0, 242, 255, 0.15);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* Textarea */
+.form-control[id="table-comment"] {
+    resize: vertical;
+    min-height: 60px;
 }
 
 /* Buttons */
@@ -599,70 +611,232 @@ body {
     max-width: 800px;
 }
 
+/* Table Edit Modal - Larger Size */
+#table-modal .modal-content {
+    max-width: 850px;
+    max-height: 90vh;
+}
+
+/* Column Section Header */
+#table-modal h3 {
+    font-family: 'Sora', sans-serif;
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin: 1.5rem 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#table-modal h3::before {
+    content: "📋";
+    font-size: 1.2rem;
+}
+
+/* Column Action Buttons */
+.column-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(0, 242, 255, 0.05), rgba(189, 0, 255, 0.05));
+    border-radius: var(--border-radius-md);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    transition: all 0.3s ease;
+}
+
+.column-actions:hover {
+    border-color: var(--primary-color);
+    border-style: solid;
+    box-shadow: 0 4px 12px rgba(0, 242, 255, 0.1);
+}
+
+.column-actions .btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
 /* Columns Container (Table Edit Modal) */
 .columns-container {
     margin-top: 1rem;
-    max-height: 350px;
+    max-height: 400px;
     overflow-y: auto;
-    padding: 0.5rem;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--border-radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Empty state for columns */
+.columns-container:empty::after {
+    content: "컬럼을 추가해주세요 👆";
+    display: block;
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    opacity: 0.6;
 }
 
 .column-row {
     display: grid;
-    grid-template-columns: 2fr 2fr 1.2fr 0.8fr auto auto auto auto;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-    padding: 0.8rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: var(--border-radius-sm);
+    grid-template-columns: 2fr 2fr 1.3fr 0.9fr auto auto auto auto;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius-md);
     align-items: center;
     transition: all 0.2s ease;
+    position: relative;
 }
 
 .column-row:hover {
     border-color: var(--primary-color);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 2px 8px rgba(0, 255, 255, 0.1);
+    transform: translateY(-1px);
 }
 
+/* Column row inputs */
 .column-row input[type="text"],
 .column-row select,
 .column-row input[type="number"] {
-    padding: 0.4rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(0, 0, 0, 0.2);
+    padding: 0.6rem 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.3);
     color: var(--text-primary);
-    border-radius: 4px;
-    font-size: 0.85rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.9rem;
+    font-family: 'Manrope', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.column-row input[type="text"]:hover,
+.column-row select:hover,
+.column-row input[type="number"]:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.4);
 }
 
 .column-row input:focus,
-.column-row select:focus {
+.column-row select:focus,
+.column-row input[type="number"]:focus {
     outline: none;
     border-color: var(--primary-color);
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 0 3px rgba(0, 255, 255, 0.1);
 }
 
+/* Column physical name - with icon */
+.col-physical-name {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-weight: 500;
+}
+
+/* Column logical name */
+.col-logical-name {
+    color: var(--text-secondary);
+}
+
+/* Data type select */
+.col-data-type {
+    font-weight: 600;
+    color: var(--accent-color);
+}
+
+/* Length input */
+.col-length {
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Checkbox labels */
 .column-row label {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.4rem;
+    padding: 0.4rem 0.6rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
+.column-row label:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.column-row label input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+.column-row label input[type="checkbox"]:checked {
+    accent-color: var(--success-color);
+}
+
+/* Primary Key label - special styling */
+.pk-label {
+    background: rgba(255, 215, 0, 0.1) !important;
+    border-color: rgba(255, 215, 0, 0.3) !important;
+    color: #ffd700;
+}
+
+.pk-label:has(input:checked) {
+    background: rgba(255, 215, 0, 0.2) !important;
+    border-color: rgba(255, 215, 0, 0.5) !important;
+}
+
+/* FK Badge */
+.fk-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.7rem;
+    background: rgba(189, 0, 255, 0.2);
+    color: var(--primary-color);
+    border: 1px solid rgba(189, 0, 255, 0.4);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Remove column button */
 .btn-remove-column {
-    background: rgba(255, 0, 85, 0.2);
+    background: rgba(255, 0, 85, 0.15);
     color: var(--danger-color);
     border: 1px solid rgba(255, 0, 85, 0.3);
-    padding: 0.3rem 0.6rem;
-    border-radius: 4px;
+    padding: 0.5rem 0.8rem;
+    border-radius: var(--border-radius-sm);
     cursor: pointer;
-    transition: all 0.2s;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 .btn-remove-column:hover {
-    background: var(--danger-color);
-    color: white;
+    background: rgba(255, 0, 85, 0.3);
+    border-color: var(--danger-color);
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(255, 0, 85, 0.3);
+}
+
+.btn-remove-column:active {
+    transform: scale(0.98);
 }
 
 /* DDL Output */
