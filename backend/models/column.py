@@ -32,6 +32,7 @@ class Column(BaseModel):
     physical_name: str = Field(..., min_length=1, max_length=64)
     logical_name: Optional[str] = None
     data_type: str = Field(default="string")
+    raw_data_type: Optional[str] = None  # Database-specific type (e.g., BIGSERIAL, VARCHAR2)
 
     # Type modifiers
     length: Optional[int] = Field(default=None, ge=1)
