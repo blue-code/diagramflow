@@ -2674,8 +2674,8 @@ class ERDEditor {
             return null;
         }
 
-        // Extract data type - enhanced to support Oracle types (VARCHAR2, NUMBER, etc.)
-        const typeMatch = afterName.match(/^(VARCHAR2?|NVARCHAR2?|CHAR|NCHAR|(?:TINY|SMALL|MEDIUM|BIG)?INT(?:EGER)?|NUMBER|DECIMAL|NUMERIC|FLOAT|DOUBLE|REAL|TEXT|CLOB|BLOB|DATE(?:TIME)?|TIMESTAMP|TIME|BOOLEAN|BOOL|JSON|ENUM|SET)(?:\s*\(([^)]+)\))?/i);
+        // Extract data type - enhanced to support Oracle, MySQL, and PostgreSQL types
+        const typeMatch = afterName.match(/^(VARCHAR2?|NVARCHAR2?|CHAR|NCHAR|(?:TINY|SMALL|MEDIUM|BIG)?INT(?:EGER)?|(?:BIG)?SERIAL|NUMBER|DECIMAL|NUMERIC|FLOAT|DOUBLE|REAL|TEXT|CLOB|BLOB|DATE(?:TIME)?|TIMESTAMP|TIME|BOOLEAN|BOOL|JSONB?|UUID|BYTEA|ENUM|SET)(?:\s*\(([^)]+)\))?/i);
 
         if (!typeMatch) {
             console.error(`  ❌ Could not parse data type from: "${afterName}"`);
@@ -2705,22 +2705,35 @@ class ERDEditor {
             }
         }
 
-        // Type normalization with Oracle support
+        // Type normalization with Oracle, MySQL, and PostgreSQL support
         if (/^(TINY|SMALL|MEDIUM)?INT/i.test(dataType)) {
             normalizedType = 'integer';
         } else if (/^BIGINT/i.test(dataType)) {
             normalizedType = 'bigint';
+        } else if (/^SERIAL$/i.test(dataType)) {
+            // PostgreSQL SERIAL = auto-increment integer
+            normalizedType = 'integer';
+        } else if (/^BIGSERIAL$/i.test(dataType)) {
+            // PostgreSQL BIGSERIAL = auto-increment bigint
+            normalizedType = 'bigint';
         } else if (/^(VARCHAR2?|NVARCHAR2?|CHAR|NCHAR)/i.test(dataType)) {
             normalizedType = 'string';
-        } else if (/^(TEXT|CLOB|BLOB)/i.test(dataType)) {
+        } else if (/^UUID$/i.test(dataType)) {
+            // PostgreSQL UUID type
+            normalizedType = 'string';
+            length = 36; // UUID standard length
+        } else if (/^(TEXT|CLOB|BLOB|BYTEA)/i.test(dataType)) {
             normalizedType = 'text';
         } else if (/^DATE$/i.test(dataType)) {
-            // Oracle DATE type
+            // Oracle/PostgreSQL DATE type
             normalizedType = 'datetime';
         } else if (/^(DATETIME|TIMESTAMP|TIME)/i.test(dataType)) {
             normalizedType = 'datetime';
         } else if (/^(BOOL|BOOLEAN)/i.test(dataType)) {
             normalizedType = 'boolean';
+        } else if (/^JSONB?$/i.test(dataType)) {
+            // PostgreSQL JSON/JSONB types
+            normalizedType = 'json';
         } else if (/^(NUMBER|DECIMAL|NUMERIC|FLOAT|DOUBLE|REAL)/i.test(dataType)) {
             // Oracle NUMBER and other numeric types
             if (lengthMatch && lengthMatch.includes(',')) {
@@ -2735,14 +2748,19 @@ class ERDEditor {
         const isPrimaryKey = /PRIMARY\s+KEY/i.test(columnDef);
         const isNotNull = /NOT\s+NULL/i.test(columnDef);
         const isUnique = /UNIQUE/i.test(columnDef);
-        const isAutoIncrement = /AUTO_INCREMENT/i.test(columnDef);
+        // PostgreSQL SERIAL/BIGSERIAL or MySQL AUTO_INCREMENT
+        const isAutoIncrement = /AUTO_INCREMENT/i.test(columnDef) || /^(BIG)?SERIAL$/i.test(dataType);
 
-        // Extract default value
+        // Extract default value (support PostgreSQL functions like CURRENT_TIMESTAMP, NOW(), etc.)
         let defaultValue = null;
-        const defaultMatch = columnDef.match(/DEFAULT\s+(?:'([^']*)'|"([^"]*)"|(\S+))/i);
+        const defaultMatch = columnDef.match(/DEFAULT\s+(?:'([^']*)'|"([^"]*)"|([^,\s]+(?:\(\))?))/i);
         if (defaultMatch) {
             defaultValue = defaultMatch[1] || defaultMatch[2] || defaultMatch[3];
             if (defaultValue === 'NULL') defaultValue = null;
+            // Normalize PostgreSQL timestamp functions
+            if (/^(CURRENT_TIMESTAMP|NOW\(\)|CURRENT_DATE|CURRENT_TIME)/i.test(defaultValue)) {
+                defaultValue = 'CURRENT_TIMESTAMP';
+            }
         }
 
         // Extract comment (inline COMMENT in DDL)

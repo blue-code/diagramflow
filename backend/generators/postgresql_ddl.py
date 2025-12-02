@@ -151,8 +151,18 @@ class PostgreSQLDDLGenerator:
         # DEFAULT value
         if column.default_value is not None and not column.auto_increment:
             if isinstance(column.default_value, str):
-                escaped_default = column.default_value.replace("'", "''")
-                parts.append(f"DEFAULT '{escaped_default}'")
+                # PostgreSQL special keywords don't need quotes
+                upper_val = column.default_value.upper()
+                if upper_val in ['CURRENT_TIMESTAMP', 'CURRENT_DATE', 'CURRENT_TIME', 'NOW()']:
+                    parts.append(f"DEFAULT {upper_val}")
+                elif upper_val == 'NOW()':
+                    parts.append("DEFAULT CURRENT_TIMESTAMP")
+                elif upper_val in ['TRUE', 'FALSE']:
+                    # Boolean values don't need quotes in PostgreSQL
+                    parts.append(f"DEFAULT {upper_val}")
+                else:
+                    escaped_default = column.default_value.replace("'", "''")
+                    parts.append(f"DEFAULT '{escaped_default}'")
             elif isinstance(column.default_value, bool):
                 parts.append(f"DEFAULT {str(column.default_value).upper()}")
             else:
