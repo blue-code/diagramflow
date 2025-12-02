@@ -520,36 +520,103 @@ class ERDEditor {
     exportToImage() {
         try {
             const svg = document.getElementById('canvas');
-            const svgData = new XMLSerializer().serializeToString(svg);
 
+            // Clone SVG to avoid modifying the original
+            const svgClone = svg.cloneNode(true);
+
+            // Get actual SVG dimensions
+            const bbox = svg.getBBox();
+            const padding = 20;
+            const width = Math.max(bbox.width + bbox.x + padding * 2, 800);
+            const height = Math.max(bbox.height + bbox.y + padding * 2, 600);
+
+            // Set explicit dimensions and viewBox
+            svgClone.setAttribute('width', width);
+            svgClone.setAttribute('height', height);
+            svgClone.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${width} ${height}`);
+            svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+            // Copy computed styles to inline styles
+            this.copyStylesToInline(svg, svgClone);
+
+            // Serialize the SVG
+            const svgData = new XMLSerializer().serializeToString(svgClone);
+
+            // Create canvas
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
+            const scaleFactor = 2; // Higher quality export
+
+            canvas.width = width * scaleFactor;
+            canvas.height = height * scaleFactor;
 
             const img = new Image();
+
             img.onload = () => {
-                canvas.width = img.width;
-                canvas.height = img.height;
+                // Fill white background
                 ctx.fillStyle = 'white';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Scale for higher quality
+                ctx.scale(scaleFactor, scaleFactor);
                 ctx.drawImage(img, 0, 0);
 
+                // Convert to blob and download
                 canvas.toBlob((blob) => {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = `${this.diagram.name || 'diagram'}.png`;
+                    document.body.appendChild(a);
                     a.click();
+                    document.body.removeChild(a);
                     URL.revokeObjectURL(url);
                     this.showNotification('이미지 내보내기 완료', 'success');
-                });
+                }, 'image/png', 1.0);
             };
 
+            img.onerror = (error) => {
+                console.error('Image load error:', error);
+                this.showNotification('이미지 생성 중 오류가 발생했습니다.', 'error');
+            };
+
+            // Create blob and load image
             const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
             const url = URL.createObjectURL(svgBlob);
             img.src = url;
+
         } catch (error) {
             console.error('Export image error:', error);
             this.showNotification('이미지 내보내기 중 오류가 발생했습니다.', 'error');
+        }
+    }
+
+    copyStylesToInline(sourceNode, targetNode) {
+        // Copy styles from source to target element
+        const computedStyle = window.getComputedStyle(sourceNode);
+
+        // Important properties to copy for SVG rendering
+        const importantProps = [
+            'fill', 'stroke', 'stroke-width', 'stroke-dasharray',
+            'opacity', 'font-family', 'font-size', 'font-weight',
+            'text-anchor', 'dominant-baseline'
+        ];
+
+        importantProps.forEach(prop => {
+            const value = computedStyle.getPropertyValue(prop);
+            if (value && value !== 'none') {
+                targetNode.style[prop] = value;
+            }
+        });
+
+        // Recursively copy styles for all children
+        const sourceChildren = sourceNode.children;
+        const targetChildren = targetNode.children;
+
+        for (let i = 0; i < sourceChildren.length; i++) {
+            if (targetChildren[i]) {
+                this.copyStylesToInline(sourceChildren[i], targetChildren[i]);
+            }
         }
     }
 
