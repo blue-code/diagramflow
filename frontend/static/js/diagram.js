@@ -2486,15 +2486,30 @@ class ERDEditor {
         // Remove COMMENT statements from DDL text
         ddlText = ddlText.replace(/COMMENT\s+ON\s+(TABLE|COLUMN)\s+[^;]+;/gi, '');
 
-        // Split by CREATE TABLE statements
-        // Updated regex to handle Oracle-style DDL with storage clauses
-        // We'll extract table definitions more carefully
-        const createTableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:\w+\.)?["`]?(\w+)["`]?\s*\(([\s\S]*?)\)[\s\S]*?;/gi;
+        // Split by CREATE TABLE statements using a more robust approach
+        // that handles nested parentheses in column definitions
+        const createTablePattern = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:\w+\.)?["`]?(\w+)["`]?\s*\(/gi;
 
         let match;
-        while ((match = createTableRegex.exec(ddlText)) !== null) {
+        while ((match = createTablePattern.exec(ddlText)) !== null) {
             const tableName = match[1].replace(/[`"]/g, '');
-            const tableBody = match[2];
+            const startPos = match.index + match[0].length;
+
+            // Find matching closing parenthesis by tracking depth
+            let depth = 1;
+            let endPos = startPos;
+            while (depth > 0 && endPos < ddlText.length) {
+                if (ddlText[endPos] === '(') depth++;
+                else if (ddlText[endPos] === ')') depth--;
+                endPos++;
+            }
+
+            if (depth !== 0) {
+                console.error(`Unmatched parentheses for table ${tableName}`);
+                continue;
+            }
+
+            const tableBody = ddlText.substring(startPos, endPos - 1);
 
             try {
                 const parsedTable = this.parseCreateTable(tableName, tableBody);
@@ -2548,8 +2563,8 @@ class ERDEditor {
 
             if (!trimmed) continue;
 
-            // Check if it's a PRIMARY KEY constraint
-            if (/^PRIMARY\s+KEY/i.test(trimmed)) {
+            // Check if it's a PRIMARY KEY constraint (with or without CONSTRAINT name)
+            if (/^PRIMARY\s+KEY/i.test(trimmed) || /^CONSTRAINT\s+\w+\s+PRIMARY\s+KEY/i.test(trimmed)) {
                 const pkMatch = trimmed.match(/PRIMARY\s+KEY\s*\(([^)]+)\)/i);
                 if (pkMatch) {
                     const pkCols = pkMatch[1].split(',').map(c => c.trim().replace(/[`"]/g, ''));
@@ -2558,9 +2573,21 @@ class ERDEditor {
                 continue;
             }
 
+            // Check if it's a UNIQUE constraint (with or without CONSTRAINT name)
+            if (/^CONSTRAINT\s+\w+\s+UNIQUE/i.test(trimmed)) {
+                // Handle UNIQUE constraints - can be enhanced later
+                continue;
+            }
+
             // Check if it's a FOREIGN KEY constraint
-            if (/^FOREIGN\s+KEY/i.test(trimmed) || /^CONSTRAINT/i.test(trimmed)) {
+            if (/^FOREIGN\s+KEY/i.test(trimmed) || /^CONSTRAINT\s+\w+\s+FOREIGN\s+KEY/i.test(trimmed)) {
                 // Skip FK constraints for now - can be added later
+                continue;
+            }
+
+            // Check if it's other CONSTRAINT types
+            if (/^CONSTRAINT/i.test(trimmed)) {
+                // Skip other constraints (CHECK, etc.)
                 continue;
             }
 
@@ -2692,7 +2719,8 @@ class ERDEditor {
         }
 
         // Extract data type - enhanced to support Oracle, MySQL, and PostgreSQL types
-        const typeMatch = afterName.match(/^(VARCHAR2?|NVARCHAR2?|CHAR|NCHAR|(?:TINY|SMALL|MEDIUM|BIG)?INT(?:EGER)?|(?:BIG)?SERIAL|NUMBER|DECIMAL|NUMERIC|FLOAT|DOUBLE|REAL|TEXT|CLOB|BLOB|DATE(?:TIME)?|TIMESTAMP|TIME|BOOLEAN|BOOL|JSONB?|UUID|BYTEA|ENUM|SET)(?:\s*\(([^)]+)\))?/i);
+        // Support CHARACTER VARYING and TIMESTAMP WITH TIME ZONE
+        const typeMatch = afterName.match(/^(CHARACTER\s+VARYING|VARCHAR2?|NVARCHAR2?|CHAR|NCHAR|(?:TINY|SMALL|MEDIUM|BIG)?INT(?:EGER)?|(?:BIG)?SERIAL|NUMBER|DECIMAL|NUMERIC|FLOAT|DOUBLE|REAL|TEXT|CLOB|BLOB|DATE(?:TIME)?|TIMESTAMP(?:\s+WITH(?:OUT)?\s+TIME\s+ZONE)?|TIME|BOOLEAN|BOOL|JSONB?|UUID|BYTEA|ENUM|SET)(?:\s*\(([^)]+)\))?/i);
 
         if (!typeMatch) {
             console.error(`  ❌ Could not parse data type from: "${afterName}"`);
@@ -2733,7 +2761,7 @@ class ERDEditor {
         } else if (/^BIGSERIAL$/i.test(dataType)) {
             // PostgreSQL BIGSERIAL = auto-increment bigint
             normalizedType = 'bigint';
-        } else if (/^(VARCHAR2?|NVARCHAR2?|CHAR|NCHAR)/i.test(dataType)) {
+        } else if (/^(CHARACTER\s+VARYING|VARCHAR2?|NVARCHAR2?|CHAR|NCHAR)/i.test(dataType)) {
             normalizedType = 'string';
         } else if (/^UUID$/i.test(dataType)) {
             // PostgreSQL UUID type
@@ -2744,7 +2772,7 @@ class ERDEditor {
         } else if (/^DATE$/i.test(dataType)) {
             // Oracle/PostgreSQL DATE type
             normalizedType = 'datetime';
-        } else if (/^(DATETIME|TIMESTAMP|TIME)/i.test(dataType)) {
+        } else if (/^(DATETIME|TIMESTAMP(?:\s+WITH(?:OUT)?\s+TIME\s+ZONE)?|TIME)/i.test(dataType)) {
             normalizedType = 'datetime';
         } else if (/^(BOOL|BOOLEAN)/i.test(dataType)) {
             normalizedType = 'boolean';
